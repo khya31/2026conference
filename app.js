@@ -542,10 +542,19 @@
 
     function itineraryTable(rows) {
       if (!rows.length) return '';
+      let previousDate = '';
       return `<div class="route-itinerary"><strong>詳細行程</strong><div class="route-itinerary-scroll">` +
-        `<table aria-label="詳細行程"><thead><tr><th>時間</th><th>行程</th></tr></thead><tbody>` +
-        rows.map(row => `<tr><td>${escapeHtml(String(row.time || '').replace(/^\d{1,2}\/\d{1,2}\s*/, ''))}</td>` +
-          `<td>${escapeHtml(row.activity || '')}</td></tr>`).join('') +
+        `<table aria-label="詳細行程"><thead><tr><th>日期</th><th>時間</th><th>行程</th></tr></thead><tbody>` +
+        rows.map(row => {
+          const rawTime = String(row.time || '');
+          const matched = rawTime.match(/^(\d{1,2}\/\d{1,2})\s*(.*)$/);
+          const date = matched ? matched[1] : '';
+          const time = matched ? matched[2] : rawTime;
+          const displayedDate = date && date !== previousDate ? date : '';
+          if (date) previousDate = date;
+          return `<tr><td>${escapeHtml(displayedDate)}</td><td>${escapeHtml(time)}</td>` +
+            `<td>${escapeHtml(row.activity || '')}</td></tr>`;
+        }).join('') +
         `</tbody></table></div></div>`;
     }
 
