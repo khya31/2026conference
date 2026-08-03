@@ -72,6 +72,7 @@
       memberCounter: 0,
       submissionKey: createSubmissionKey(),
       submitting: false,
+      completed: false,
       earlyBirdTimer: null,
       earlyBirdRequestId: 0,
       insuranceByMember: {}
@@ -926,7 +927,7 @@
 
     async function submit(event) {
       event.preventDefault();
-      if (state.submitting) return;
+      if (state.submitting || state.completed) return;
       hideError();
       if (!el.form.reportValidity()) return;
       const members = participantPayload();
@@ -1000,8 +1001,8 @@
         document.getElementById('resultRegistrationId').textContent = response.registrationId;
         document.getElementById('resultTotal').textContent = money(response.totalDue);
         renderSubmissionFollowUp(response);
+        state.completed = true;
         el.dialog.showModal();
-        state.submissionKey = createSubmissionKey();
       } catch (error) {
         showError(error.message);
       } finally {
@@ -1034,8 +1035,9 @@
 
     function setSubmitting(value) {
       state.submitting = value;
-      el.submitButton.disabled = value;
-      el.submitButton.textContent = value ? '送出中…' : '送出報名';
+      el.submitButton.disabled = value || state.completed;
+      el.submitButton.setAttribute('aria-busy', String(value));
+      el.submitButton.textContent = state.completed ? '已完成報名' : value ? '送出中…' : '送出報名';
     }
 
     function showError(message) {
