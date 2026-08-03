@@ -756,6 +756,8 @@
         if (staying) {
           if (!adult) base = member.childAgeBand === 'INFANT' ? 300 : 1000;
           else base = ['MIDDLE', 'ELDER'].includes(member.identityCategory) ? 3490 : 2500;
+        } else if (!meetingOnly()) {
+          base = 300;
         }
         const roomFee = adult && staying ? room.surcharge : 0;
         const routeFee = mode === 'STANDARD' && route
@@ -772,6 +774,7 @@
           name: member.name || `成員${index + 1}`,
           role: member.role,
           accommodation: base,
+          accommodationLabel: staying ? '住宿費' : '基本費用（住宿自理）',
           room: roomFee,
           travel: routeFee,
           meeting: meetingFee,
@@ -901,7 +904,7 @@
         const role = member.role === 'PRIMARY' ? '主報名者' : (member.role === 'FAMILY' ? '家人' : '同行者');
         return `<section class="member-fee"><h4>${escapeHtml(role)}｜${escapeHtml(member.name)}</h4>` +
           (member.meeting ? `<div class="detail-row"><span>僅參加聚會</span><strong>${money(member.meeting)}</strong></div>` : '') +
-          `<div class="detail-row"><span>住宿費</span><strong>${money(member.accommodation)}</strong></div>` +
+          (member.accommodation ? `<div class="detail-row"><span>${escapeHtml(member.accommodationLabel)}</span><strong>${money(member.accommodation)}</strong></div>` : '') +
           `<div class="detail-row"><span>房型加價</span><strong>${money(member.room)}</strong></div>` +
           `<div class="detail-row"><span>旅遊費</span><strong>${money(member.travel)}</strong></div>` +
           `<div class="detail-row"><span>旅遊平安險</span><strong>${money(member.insurance)}</strong></div>` +
