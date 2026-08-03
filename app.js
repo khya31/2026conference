@@ -1008,10 +1008,12 @@
 
     function renderSubmissionFollowUp(response) {
       el.resultEmail.hidden = !response.email;
-      el.resultEmail.classList.toggle('result-info-card--warning', Boolean(response.email && !response.emailSent));
+      el.resultEmail.classList.toggle('result-info-card--warning', Boolean(response.email && !response.emailSent && !response.emailQueued));
       el.resultEmailText.textContent = !response.email ? '' : response.emailSent
         ? `行程及費用明細已寄送至 ${response.email}。`
-        : `報名已完成，但郵件副本暫時無法寄送至 ${response.email}。${response.emailError || '請記下報名編號並和承辦人員聯絡。'}`;
+        : response.emailQueued
+          ? `行程及費用明細已排入寄送至 ${response.email}，通常會在一分鐘內送達。`
+          : `報名已完成，但郵件副本暫時無法排入寄送至 ${response.email}。請記下報名編號並和承辦人員聯絡。`;
       const financial = response.financialContact;
       el.resultFinancial.hidden = !financial;
       el.resultFinancialText.textContent = financial
