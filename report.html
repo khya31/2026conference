@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <title>報名總表</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="report">
+  <header class="site-header report-header">
+    <div><span class="eyebrow">收款與人數核對</span><h1>報名總表</h1></div>
+    <a class="report-link" href="./">返回報名頁</a>
+  </header>
+  <main class="report-shell">
+    <section id="loginPanel" class="login-card card">
+      <h2>請輸入管理密碼</h2>
+      <p>本頁僅供查詢、統計、收款核對與 Excel 下載。</p>
+      <form id="loginForm">
+        <label class="field"><span>密碼</span><input id="reportPassword" type="password" autocomplete="current-password" required></label>
+        <button id="loginButton" class="button button--primary" type="submit">登入</button>
+      </form>
+      <div id="loginMessage" class="message message--error" hidden></div>
+    </section>
+
+    <div id="reportApp" hidden>
+      <section class="stats-grid">
+        <article class="stat-card"><span>報名筆數</span><strong id="statRegistrations">0</strong></article>
+        <article class="stat-card"><span>總人數</span><strong id="statParticipants">0</strong></article>
+        <article class="stat-card"><span>住宿人數</span><strong id="statStaying">0</strong></article>
+        <article class="stat-card stat-card--money"><span>報名時應收總額</span><strong id="statTotal">0 元</strong></article>
+      </section>
+
+      <section class="card filter-card">
+        <div class="section-heading"><div><h2>篩選條件</h2></div><button id="clearFilters" class="button button--text" type="button">清除篩選</button></div>
+        <div class="filter-grid">
+          <label class="field field--wide"><span>姓名、手機、報名編號</span><input data-filter="keyword" placeholder="輸入關鍵字"></label>
+          <label class="field"><span>報名形式</span><select data-filter="registrationType"></select></label>
+          <label class="field"><span>召會</span><select data-filter="church"></select></label>
+          <label class="field"><span>照顧區</span><select data-filter="careArea"></select></label>
+          <label class="field"><span>大區</span><select data-filter="district"></select></label>
+          <label class="field"><span>是否住宿</span><select data-filter="staying"><option value="">全部</option><option value="YES">有住宿</option><option value="NO">無住宿</option></select></label>
+          <label class="field"><span>房型</span><select data-filter="roomType"></select></label>
+          <label class="field"><span>旅遊方式</span><select data-filter="travelMode"></select></label>
+          <label class="field field--wide"><span>路線</span><select data-filter="route"></select></label>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-heading report-actions">
+          <div><h2>報名資料</h2><span id="resultCount" class="muted"></span></div>
+          <div class="download-menu">
+            <button id="downloadButton" class="button button--secondary" type="button">下載 Excel ▾</button>
+            <div id="downloadOptions" class="download-options" hidden>
+              <button type="button" data-export="registrations">報名總表</button>
+              <button type="button" data-export="participants">成員名冊</button>
+              <button type="button" data-export="fees">收費明細</button>
+              <button type="button" data-export="package">完整資料包（3分頁）</button>
+            </div>
+          </div>
+        </div>
+        <div id="routeStats" class="route-stats"></div>
+        <div class="table-wrap"><table id="reportTable"><thead></thead><tbody></tbody></table></div>
+        <div id="reportMessage" class="message" hidden></div>
+      </section>
+    </div>
+  </main>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

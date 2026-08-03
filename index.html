@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="高屏澎眾召會 2026年青職特會報名">
+  <title>墾丁相調報名</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="registration">
+  <header class="site-header">
+    <div>
+      <span class="eyebrow">高屏澎眾召會</span>
+      <h1 id="eventTitle">2026年青職特會報名</h1>
+      <p class="header-meta" id="eventDate">日期：2026/10/3～10/4</p>
+    </div>
+    <a class="report-link" href="report.html" target="_blank" rel="noopener">報名總表</a>
+  </header>
+
+  <main class="page-shell">
+    <div id="globalMessage" class="message message--error" hidden></div>
+    <form id="registrationForm" novalidate>
+      <section class="card intro-card">
+        <h2>報名說明</h2>
+        <p>請依每位成員的年齡及旅遊內容填寫；住宿方式與房型為整組共用。畫面底部會即時顯示應繳金額。</p>
+      </section>
+
+      <section class="card">
+        <div class="section-heading"><div><span class="step">01</span><h2>報名形式</h2></div></div>
+        <div class="choice-grid choice-grid--three">
+          <label class="choice"><input type="radio" name="registrationType" value="PERSONAL" checked><span><strong>個人報名</strong><small>僅主報名者</small></span></label>
+          <label class="choice"><input type="radio" name="registrationType" value="TEAM"><span><strong>相約／組隊報名</strong><small>可新增、刪除同行者；年齡可選兒童</small></span></label>
+          <label class="choice"><input type="radio" name="registrationType" value="FAMILY"><span><strong>家庭報名</strong><small>可新增、刪除家人；年齡可選兒童</small></span></label>
+        </div>
+        <label class="meeting-only-choice">
+          <input id="meetingOnly" type="checkbox">
+          <span><strong>僅參加聚會（交通工具、住宿、旅遊自理）</strong><small>每人 300 元，會計入報名時應繳明細；勾選後不調查交通工具、住宿及旅遊行程。</small></span>
+        </label>
+        <div id="accommodationSection" class="accommodation-section">
+          <div class="form-grid">
+            <label class="field"><span>住宿方式</span><select id="groupAccommodation" required><option value="">請選擇</option><option value="HOWARD">福華度假飯店</option><option value="SELF">住宿自理</option></select></label>
+            <label id="groupRoomField" class="field room-type-field" hidden><span>整組房型</span><select id="groupRoomType"><option value="">請選擇</option><option value="SIX">六人房</option><option value="QUAD">四人房</option><option value="TRIPLE">三人房（成人＋350元）</option><option value="DOUBLE">二人房（成人＋950元）</option></select></label>
+          </div>
+          <div id="groupHotelInfo" class="hotel-banner" hidden>
+            <div><span class="hotel-icon">宿</span></div>
+            <div>
+              <strong>全組住宿福華度假飯店</strong>
+              <p>房型加價：六人房及四人房 0 元、三人房每位成人加 350 元、二人房每位成人加 950 元。幼兒及兒童不加收房型費。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-heading">
+          <div><span class="step">02</span><h2>成員資料</h2></div>
+          <button id="addAdultButton" class="button button--secondary" type="button" hidden>＋ 新增同行者</button>
+        </div>
+        <div id="participants"></div>
+      </section>
+
+      <section id="transportCard" class="card">
+        <div class="section-heading"><div><span class="step">03</span><h2>交通工具</h2></div></div>
+        <div class="choice-grid choice-grid--four">
+          <label class="choice"><input type="radio" name="transportMode" value="MOTORCYCLE" required><span><strong>機車隊</strong><small>只對應路線1，必須參加旅遊行程</small></span></label>
+          <label class="choice"><input type="radio" name="transportMode" value="BICYCLE" required><span><strong>單車隊</strong><small>只對應路線2，必須參加旅遊行程</small></span></label>
+          <label class="choice"><input type="radio" name="transportMode" value="COACH" required><span><strong>搭乘遊覽車</strong><small>可選路線3、路線8，必須參加旅遊行程</small></span></label>
+          <label class="choice"><input type="radio" name="transportMode" value="CARPOOL" required><span><strong>自行安排車輛共乘</strong><small>可選路線3～8</small></span></label>
+        </div>
+        <section id="insuranceSurvey" class="insurance-survey" hidden>
+          <div class="insurance-survey__heading">
+            <div>
+              <h3>加購旅遊平安保險</h3>
+              <p>每人可分開決定是否加保，每位加保費用 50 元。</p>
+            </div>
+            <span class="insurance-price">每人 50 元</span>
+          </div>
+          <div id="insuranceParticipants" class="insurance-participants"></div>
+        </section>
+      </section>
+
+      <section id="travelCard" class="card">
+        <div class="section-heading"><div><span class="step">04</span><h2>旅遊方式</h2></div></div>
+        <div class="choice-stack">
+          <label class="choice"><input type="radio" name="travelMode" value="NONE" checked><span><strong>不參加旅遊行程</strong><small>不顯示路線，也不計算旅遊費</small></span></label>
+          <label class="choice"><input type="radio" name="travelMode" value="STANDARD"><span><strong>參加旅遊行程</strong><small>旅遊費納入報名時應繳總額</small></span></label>
+          <label class="choice"><input type="radio" name="travelMode" value="SELF_PAY"><span><strong>參加旅遊行程（自行購票及用餐）</strong><small>僅自行安排車輛共乘可選；旅遊門票、活動與餐費不納入總額</small></span></label>
+        </div>
+        <div id="routeSection" class="route-section" hidden>
+          <label class="field">
+            <span>10/3旅遊路線</span>
+            <select id="routeId" required><option value="">請選擇一條路線</option></select>
+          </label>
+          <div id="routeInfo" class="route-info" hidden></div>
+          <div id="routeDetailTable"></div>
+          <div id="routeOptions"></div>
+          <div id="route7Count" class="route-count" hidden></div>
+          <div id="onsiteTable"></div>
+          <div id="pendingTable"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <label class="field">
+          <span>備註（選填）</span>
+          <textarea id="note" maxlength="500" rows="3" placeholder="可填寫需讓承辦人員知道的事項"></textarea>
+        </label>
+      </section>
+      <div class="mobile-bottom-spacer" aria-hidden="true"></div>
+    </form>
+  </main>
+
+  <div class="fee-dock">
+    <div class="fee-dock__inner">
+      <button class="fee-total" id="toggleDetails" type="button" aria-expanded="false">
+        <span>報名時應繳總額</span><strong id="grandTotal">0 元</strong><small>查看明細</small>
+      </button>
+      <div class="fee-dock__details" id="feeDetails" hidden></div>
+      <div class="fee-dock__actions">
+        <span id="onsiteReminder" class="onsite-reminder">目前無當場繳交項目</span>
+        <button id="submitButton" class="button button--primary" type="submit" form="registrationForm">送出報名</button>
+      </div>
+    </div>
+  </div>
+
+  <dialog id="resultDialog" class="result-dialog">
+    <div class="success-mark">✓</div>
+    <h2>報名已送出</h2>
+    <p>報名編號：<strong id="resultRegistrationId"></strong></p>
+    <p>報名時應繳：<strong id="resultTotal"></strong></p>
+    <section id="resultFinancial" class="result-info-card" hidden>
+      <h3>財務窗口</h3>
+      <p id="resultFinancialText"></p>
+    </section>
+    <section id="resultRouteGroup" class="result-info-card result-route-group" hidden>
+      <h3 id="resultRouteGroupTitle">旅遊行程群組</h3>
+      <p>請加入您所選路線的 LINE 群組，以接收行前通知。</p>
+      <img id="resultRouteQr" alt="旅遊路線 LINE 群組 QR Code">
+      <a id="resultRouteLink" class="button button--secondary" target="_blank" rel="noopener">開啟 LINE 群組邀請連結</a>
+    </section>
+    <button id="closeResult" class="button button--primary" type="button">完成</button>
+  </dialog>
+
+  <template id="adultTemplate">
+    <article class="member-card adult-card">
+      <header class="member-card__header"><h3 class="member-title"></h3><button class="remove-member" type="button">刪除</button></header>
+      <div class="member-card__body form-grid">
+        <label class="field name-field">
+          <span class="field-label-line"><span>姓名</span><span class="early-bird-status" data-early-bird-status role="status" aria-live="polite" hidden></span></span>
+          <input data-field="name" aria-label="姓名" autocomplete="name" maxlength="40" required>
+        </label>
+        <label class="field adult-only"><span>手機</span><input data-field="phone" type="tel" inputmode="tel" maxlength="30" required></label>
+        <label class="field adult-only"><span>召會</span><select data-field="church" required></select></label>
+        <label class="field adult-only kaohsiung-only"><span>照顧區</span><select data-field="careArea" required></select></label>
+        <label class="field adult-only kaohsiung-only"><span>大區</span><select data-field="district" required></select></label>
+        <label class="field relationship-field" hidden><span>關係</span><input data-field="relationship" maxlength="30"></label>
+        <label class="field"><span>年齡</span><select data-field="identityCategory" required></select></label>
+        <label class="field child-age-field" hidden><span>兒童年齡</span><select data-field="childAgeBand"><option value="">請選擇</option><option value="INFANT">幼兒（0～5歲）</option><option value="CHILD_6_11">兒童（6～11歲）</option></select></label>
+      </div>
+    </article>
+  </template>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
