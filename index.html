@@ -101,6 +101,12 @@
       </section>
 
       <section class="card">
+        <label class="field email-field">
+          <span>電子郵件</span>
+          <input id="email" type="email" autocomplete="email" maxlength="254" required
+            placeholder="請輸入接收報名副本的電子郵件">
+          <small class="input-help">完成報名後，系統會將行程及費用明細副本寄送至此信箱。</small>
+        </label>
         <label class="field">
           <span>備註（選填）</span>
           <textarea id="note" maxlength="500" rows="3" placeholder="可填寫需讓承辦人員知道的事項"></textarea>
@@ -128,6 +134,10 @@
     <h2>報名已送出</h2>
     <p>報名編號：<strong id="resultRegistrationId"></strong></p>
     <p>報名時應繳：<strong id="resultTotal"></strong></p>
+    <section id="resultEmail" class="result-info-card" hidden>
+      <h3>電子郵件副本</h3>
+      <p id="resultEmailText"></p>
+    </section>
     <section id="resultFinancial" class="result-info-card" hidden>
       <h3>財務窗口</h3>
       <p id="resultFinancialText"></p>

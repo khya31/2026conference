@@ -104,8 +104,11 @@
       toggleDetails: document.getElementById('toggleDetails'),
       onsiteReminder: document.getElementById('onsiteReminder'),
       submitButton: document.getElementById('submitButton'),
+      email: document.getElementById('email'),
       globalMessage: document.getElementById('globalMessage'),
       dialog: document.getElementById('resultDialog'),
+      resultEmail: document.getElementById('resultEmail'),
+      resultEmailText: document.getElementById('resultEmailText'),
       resultFinancial: document.getElementById('resultFinancial'),
       resultFinancialText: document.getElementById('resultFinancialText'),
       resultRouteGroup: document.getElementById('resultRouteGroup'),
@@ -986,6 +989,7 @@
         travelMode: travelMode(),
         routeId: el.routeId.value,
         routeOptions: options,
+        email: el.email.value,
         note: document.getElementById('note').value,
         submissionKey: state.submissionKey
       };
@@ -1006,6 +1010,11 @@
     }
 
     function renderSubmissionFollowUp(response) {
+      el.resultEmail.hidden = !response.email;
+      el.resultEmail.classList.toggle('result-info-card--warning', Boolean(response.email && !response.emailSent));
+      el.resultEmailText.textContent = !response.email ? '' : response.emailSent
+        ? `行程及費用明細已寄送至 ${response.email}。`
+        : `報名已完成，但郵件副本暫時無法寄送至 ${response.email}。${response.emailError || '請記下報名編號並和承辦人員聯絡。'}`;
       const financial = response.financialContact;
       el.resultFinancial.hidden = !financial;
       el.resultFinancialText.textContent = financial
@@ -1051,7 +1060,7 @@
       downloadButton: document.getElementById('downloadButton'),
       downloadOptions: document.getElementById('downloadOptions')
     };
-    const columns = ['報名時間', '報名編號', '主報名者', '手機', '報名形式', '人數', '召會', '照顧區', '大區',
+    const columns = ['報名時間', '報名編號', '主報名者', '手機', '電子郵件', '報名形式', '人數', '召會', '照顧區', '大區',
       '僅參加聚會', '住宿人數', '房型', '交通工具', '旅遊方式', '路線', '聚會費', '住宿費', '房型加價',
       '旅遊費', '旅平險人數', '旅平險費', '應收總額', '當場繳交提醒', '待確認項目'];
 
