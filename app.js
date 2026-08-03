@@ -320,14 +320,10 @@
 
     function updateAgeFields(card) {
       const child = isChildCard(card);
-      const primary = card.dataset.primary === 'true';
       const childAgeField = card.querySelector('.child-age-field');
-      const relationshipField = card.querySelector('.relationship-field');
       childAgeField.hidden = !child;
       childAgeField.querySelector('select').required = child;
       if (!child) childAgeField.querySelector('select').value = '';
-      relationshipField.hidden = primary || registrationType() !== 'FAMILY' || child;
-      relationshipField.querySelector('input').required = !relationshipField.hidden;
       card.querySelectorAll('.adult-only').forEach(field => field.hidden = child);
       card.querySelectorAll('.adult-only input, .adult-only select').forEach(input => {
         input.required = !child && input.dataset.optional !== 'true';
