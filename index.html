@@ -67,16 +67,6 @@
           <label class="choice"><input type="radio" name="transportMode" value="COACH" required><span><strong>搭乘遊覽車</strong><small>可選路線3、路線8，必須參加旅遊行程</small></span></label>
           <label class="choice"><input type="radio" name="transportMode" value="CARPOOL" required><span><strong>自行安排車輛共乘</strong><small>可選路線3～8</small></span></label>
         </div>
-        <section id="insuranceSurvey" class="insurance-survey" hidden>
-          <div class="insurance-survey__heading">
-            <div>
-              <h3>加購旅遊平安保險</h3>
-              <p>每人可分開決定是否加保，每位加保費用 50 元。</p>
-            </div>
-            <span class="insurance-price">每人 50 元</span>
-          </div>
-          <div id="insuranceParticipants" class="insurance-participants"></div>
-        </section>
       </section>
 
       <section id="travelCard" class="card">
@@ -98,6 +88,16 @@
           <div id="onsiteTable"></div>
           <div id="pendingTable"></div>
         </div>
+        <section id="insuranceSurvey" class="insurance-survey" hidden>
+          <div class="insurance-survey__heading">
+            <div>
+              <h3 id="insuranceTitle">旅遊平安保險</h3>
+              <p id="insuranceDescription">每人可分開決定是否加保，每位加保費用 50 元。</p>
+            </div>
+            <span class="insurance-price">每人 50 元</span>
+          </div>
+          <div id="insuranceParticipants" class="insurance-participants"></div>
+        </section>
       </section>
 
       <section class="card">

@@ -91,6 +91,8 @@
       transportCard: document.getElementById('transportCard'),
       travelCard: document.getElementById('travelCard'),
       insuranceSurvey: document.getElementById('insuranceSurvey'),
+      insuranceTitle: document.getElementById('insuranceTitle'),
+      insuranceDescription: document.getElementById('insuranceDescription'),
       insuranceParticipants: document.getElementById('insuranceParticipants'),
       routeSection: document.getElementById('routeSection'),
       routeId: document.getElementById('routeId'),
@@ -407,9 +409,20 @@
       });
     }
 
+    function insuranceMode() {
+      if (meetingOnly()) return 'NONE';
+      const transport = transportMode();
+      const routeId = el.routeId.value;
+      if (['MOTORCYCLE', 'BICYCLE', 'COACH'].includes(transport)) return 'REQUIRED';
+      if (transport === 'CARPOOL' && ['R03', 'R08'].includes(routeId)) return 'OPTIONAL';
+      return 'NONE';
+    }
+
     function renderInsuranceSurvey() {
       captureInsuranceSurvey();
-      const eligible = !meetingOnly() && ['MOTORCYCLE', 'BICYCLE', 'COACH'].includes(transportMode());
+      const mode = insuranceMode();
+      const eligible = mode !== 'NONE';
+      const required = mode === 'REQUIRED';
       el.insuranceSurvey.hidden = !eligible;
       if (!eligible) {
         [...el.participants.querySelectorAll('.adult-card')].forEach(card => {
@@ -418,10 +431,15 @@
         el.insuranceParticipants.innerHTML = '';
         return;
       }
+      el.insuranceTitle.textContent = required ? '旅遊平安保險（必須加保）' : '旅遊平安保險';
+      el.insuranceDescription.textContent = required
+        ? '本路線及交通方式全員必須加保，每位加保費用 50 元。'
+        : '自行開車者可由每位成員分開決定是否加保，每位加保費用 50 元。';
       const cards = [...el.participants.querySelectorAll('.adult-card')];
       el.insuranceParticipants.innerHTML = cards.map((card, index) => {
         const memberId = card.dataset.memberId;
         const data = Object.assign(emptyInsuranceData(), state.insuranceByMember[memberId] || {});
+        if (required) data.travelInsurance = 'YES';
         state.insuranceByMember[memberId] = data;
         const child = isChildCard(card);
         const insured = data.travelInsurance === 'YES';
@@ -435,8 +453,9 @@
         </div>` : '';
         return `<article class="insurance-member" data-member-id="${memberId}" data-child="${child}">
           <h4>${escapeHtml(role)}｜${escapeHtml(memberName)}</h4>
-          <label class="field"><span>是否加保旅遊平安險</span><select data-insurance-field="travelInsurance">
-            <option value="NO" ${insured ? '' : 'selected'}>否</option><option value="YES" ${insured ? 'selected' : ''}>是（加收50元）</option>
+          <label class="field"><span>${required ? '加保狀態' : '是否加保旅遊平安險'}</span><select data-insurance-field="travelInsurance" ${required ? 'disabled aria-disabled="true"' : ''}>
+            ${required ? '<option value="YES" selected>必須加保（加收50元）</option>' :
+              `<option value="NO" ${insured ? '' : 'selected'}>否</option><option value="YES" ${insured ? 'selected' : ''}>是（加收50元）</option>`}
           </select></label>
           <div class="insurance-details form-grid" data-insurance-details ${insured ? '' : 'hidden'}>
             <label class="field"><span>被保險人出生年月日（民國年）</span><input data-insurance-field="insuredBirthRoc" inputmode="numeric" maxlength="10" pattern="[0-9]{1,3}[/-][0-9]{1,2}[/-][0-9]{1,2}" placeholder="例：85/01/02" value="${escapeHtml(data.insuredBirthRoc)}" ${insured ? 'required' : ''}></label>
@@ -451,8 +470,8 @@
       if (!state.config) return;
       updateMeetingOnly();
       enforceTravelMode();
-      renderInsuranceSurvey();
       renderRoute();
+      renderInsuranceSurvey();
       renderQuote();
     }
 
@@ -772,8 +791,7 @@
         const routeFee = mode === 'STANDARD' && route
           ? memberTravelFee(member, index, route.id, options, transport, group, activityIndices) : 0;
         const meetingFee = meetingOnly() ? 300 : 0;
-        const insuranceFee = !meetingOnly() && ['MOTORCYCLE', 'BICYCLE', 'COACH'].includes(transport) &&
-          member.travelInsurance === 'YES' ? 50 : 0;
+        const insuranceFee = insuranceMode() !== 'NONE' && member.travelInsurance === 'YES' ? 50 : 0;
         accommodation += base;
         surcharge += roomFee;
         travel += routeFee;
