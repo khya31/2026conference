@@ -28,7 +28,7 @@
       <section class="card">
         <div class="section-heading"><div><span class="step">01</span><h2>報名形式</h2></div></div>
         <div class="choice-grid choice-grid--three">
-          <label class="choice"><input type="radio" name="registrationType" value="PERSONAL" checked><span><strong>個人報名</strong><small>僅主報名者</small></span></label>
+          <label class="choice"><input type="radio" name="registrationType" value="PERSONAL" checked><span><strong>個人報名</strong><small class="personal-room-note">※預設房型為四人房，由青職組安排同住者</small></span></label>
           <label class="choice"><input type="radio" name="registrationType" value="TEAM"><span><strong>相約／組隊報名</strong><small>可新增、刪除同行者；年齡可選兒童</small></span></label>
           <label class="choice"><input type="radio" name="registrationType" value="FAMILY"><span><strong>家庭報名</strong><small>可新增、刪除家人；年齡可選兒童</small></span></label>
         </div>
@@ -40,6 +40,13 @@
           <div class="form-grid">
             <label class="field"><span>住宿方式</span><select id="groupAccommodation" required><option value="">請選擇</option><option value="HOWARD">福華度假飯店</option><option value="SELF">不需代訂住宿</option></select></label>
             <label id="groupRoomField" class="field room-type-field" hidden><span>整組房型</span><select id="groupRoomType"><option value="">請選擇</option><option value="SIX">六人房</option><option value="QUAD">四人房</option><option value="TRIPLE">三人房（成人＋350元）</option><option value="DOUBLE">二人房（成人＋950元）</option></select></label>
+          </div>
+          <div id="personalRoomWarning" class="room-warning" hidden>
+            <p id="personalRoomWarningText"></p>
+            <label class="confirmation-check">
+              <input id="personalRoomConfirm" type="checkbox">
+              <span>我已了解並確認</span>
+            </label>
           </div>
           <div id="groupHotelInfo" class="hotel-banner" hidden>
             <div><span class="hotel-icon">宿</span></div>
@@ -149,6 +156,19 @@
       <a id="resultRouteLink" class="button button--secondary" target="_blank" rel="noopener">開啟 LINE 群組邀請連結</a>
     </section>
     <button id="closeResult" class="button button--primary" type="button">完成</button>
+  </dialog>
+
+  <dialog id="roomCapacityDialog" class="result-dialog confirmation-dialog">
+    <h2>房型人數提醒</h2>
+    <p>您的報名人數未達房型人數，請更換房型或由青職組安排同住者。若無合適同住者，屆時需加收空床費。</p>
+    <label class="confirmation-check confirmation-check--dialog">
+      <input id="groupRoomConfirm" type="checkbox">
+      <span>我已了解並確認</span>
+    </label>
+    <div class="dialog-actions">
+      <button id="changeRoomButton" class="button button--secondary" type="button">返回更換房型</button>
+      <button id="confirmRoomButton" class="button button--primary" type="button" disabled>確認並繼續送出</button>
+    </div>
   </dialog>
 
   <template id="adultTemplate">

@@ -75,7 +75,9 @@
       completed: false,
       earlyBirdTimer: null,
       earlyBirdRequestId: 0,
-      insuranceByMember: {}
+      insuranceByMember: {},
+      confirmedRoomCapacityKey: '',
+      pendingRoomCapacityKey: ''
     };
     const el = {
       form: document.getElementById('registrationForm'),
@@ -88,6 +90,9 @@
       roomField: document.getElementById('groupRoomField'),
       roomType: document.getElementById('groupRoomType'),
       hotelInfo: document.getElementById('groupHotelInfo'),
+      personalRoomWarning: document.getElementById('personalRoomWarning'),
+      personalRoomWarningText: document.getElementById('personalRoomWarningText'),
+      personalRoomConfirm: document.getElementById('personalRoomConfirm'),
       transportCard: document.getElementById('transportCard'),
       travelCard: document.getElementById('travelCard'),
       insuranceSurvey: document.getElementById('insuranceSurvey'),
@@ -117,7 +122,11 @@
       resultRouteGroup: document.getElementById('resultRouteGroup'),
       resultRouteGroupTitle: document.getElementById('resultRouteGroupTitle'),
       resultRouteQr: document.getElementById('resultRouteQr'),
-      resultRouteLink: document.getElementById('resultRouteLink')
+      resultRouteLink: document.getElementById('resultRouteLink'),
+      roomCapacityDialog: document.getElementById('roomCapacityDialog'),
+      groupRoomConfirm: document.getElementById('groupRoomConfirm'),
+      changeRoomButton: document.getElementById('changeRoomButton'),
+      confirmRoomButton: document.getElementById('confirmRoomButton')
     };
 
     bind();
@@ -135,6 +144,17 @@
         el.toggleDetails.setAttribute('aria-expanded', String(open));
       });
       document.getElementById('closeResult').addEventListener('click', () => el.dialog.close());
+      el.groupRoomConfirm.addEventListener('change', () => {
+        el.confirmRoomButton.disabled = !el.groupRoomConfirm.checked;
+      });
+      el.changeRoomButton.addEventListener('click', () => el.roomCapacityDialog.close());
+      el.confirmRoomButton.addEventListener('click', () => {
+        if (!el.groupRoomConfirm.checked || !state.pendingRoomCapacityKey) return;
+        state.confirmedRoomCapacityKey = state.pendingRoomCapacityKey;
+        state.pendingRoomCapacityKey = '';
+        el.roomCapacityDialog.close();
+        el.form.requestSubmit();
+      });
     }
 
     async function load() {
@@ -367,8 +387,26 @@
       el.roomField.hidden = !hotel;
       el.roomType.required = hotel;
       el.roomType.disabled = meetingOnly();
+      if (hotel && registrationType() === 'PERSONAL' && !el.roomType.value) el.roomType.value = 'QUAD';
       if (!hotel) el.roomType.value = '';
       el.hotelInfo.hidden = !hotel;
+      updatePersonalRoomWarning();
+    }
+
+    function updatePersonalRoomWarning() {
+      const roomLabels = { SIX: '六人房', TRIPLE: '三人房', DOUBLE: '二人房' };
+      const roomLabel = roomLabels[el.roomType.value];
+      const show = !meetingOnly() && registrationType() === 'PERSONAL' &&
+        el.accommodation.value === 'HOWARD' && Boolean(roomLabel);
+      el.personalRoomWarning.hidden = !show;
+      el.personalRoomConfirm.required = show;
+      if (show) {
+        el.personalRoomWarningText.textContent =
+          `您選擇的是${roomLabel}，同住者將由青職組安排。若無合適配對者，屆時需加收空床費。`;
+      } else {
+        el.personalRoomWarningText.textContent = '';
+        el.personalRoomConfirm.checked = false;
+      }
     }
 
     function emptyInsuranceData() {
@@ -951,12 +989,32 @@
         : (quote.pending.length ? '另有待確認收費，請查看路線細目' : '目前無當場繳交項目');
     }
 
+    function roomCapacityWarningKey(members) {
+      const type = registrationType();
+      if (meetingOnly() || !['TEAM', 'FAMILY'].includes(type) ||
+          el.accommodation.value !== 'HOWARD') return '';
+      const capacities = { SIX: 6, QUAD: 4, TRIPLE: 3, DOUBLE: 2 };
+      const capacity = capacities[el.roomType.value] || 0;
+      const age12PlusCount = members.filter(member =>
+        member.identityCategory && member.identityCategory !== 'CHILD').length;
+      if (!capacity || age12PlusCount >= capacity) return '';
+      return [type, el.roomType.value, age12PlusCount, members.length].join('|');
+    }
+
     async function submit(event) {
       event.preventDefault();
       if (state.submitting || state.completed) return;
       hideError();
       if (!el.form.reportValidity()) return;
       const members = participantPayload();
+      const roomCapacityKey = roomCapacityWarningKey(members);
+      if (roomCapacityKey && state.confirmedRoomCapacityKey !== roomCapacityKey) {
+        state.pendingRoomCapacityKey = roomCapacityKey;
+        el.groupRoomConfirm.checked = false;
+        el.confirmRoomButton.disabled = true;
+        el.roomCapacityDialog.showModal();
+        return;
+      }
       const route = currentRoute();
       const options = collectRouteOptions();
       if (!meetingOnly() && ['MOTORCYCLE', 'BICYCLE', 'COACH'].includes(transportMode()) && travelMode() === 'NONE') {
@@ -1016,6 +1074,8 @@
         travelMode: travelMode(),
         routeId: el.routeId.value,
         routeOptions: options,
+        personalRoomConfirmed: el.personalRoomConfirm.checked,
+        roomCapacityConfirmed: Boolean(roomCapacityKey && state.confirmedRoomCapacityKey === roomCapacityKey),
         email: el.email.value,
         note: document.getElementById('note').value,
         submissionKey: state.submissionKey
