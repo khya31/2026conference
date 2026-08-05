@@ -131,6 +131,7 @@
   .insurance-participants { display: grid; gap: 12px; }
   .insurance-member { padding: 15px; border: 1px solid #d9e5e1; border-radius: 14px; background: white; }
   .insurance-member h4 { margin: 0 0 12px; color: var(--brand-dark); }
+  .insurance-name-note { color: var(--danger); font-size: .78rem; font-weight: 900; }
   .insurance-details { margin-top: 14px; }
   .guardian-fields { grid-column: 1 / -1; padding-top: 14px; border-top: 1px dashed #b8d0c8; }
   .capacity-note { display: block; margin-top: 6px; color: #9a531f; font-weight: 900; }

@@ -490,7 +490,7 @@
           <label class="field"><span>監護人身分證字號</span><input data-insurance-field="guardianNationalId" maxlength="10" pattern="[A-Za-z][12][0-9]{8}" autocapitalize="characters" placeholder="例：A123456789" value="${escapeHtml(data.guardianNationalId)}" ${insured ? 'required' : ''}></label>
         </div>` : '';
         return `<article class="insurance-member" data-member-id="${memberId}" data-child="${child}">
-          <h4>${escapeHtml(role)}｜${escapeHtml(memberName)}</h4>
+          <h4>${escapeHtml(role)}｜${escapeHtml(memberName)} <small class="insurance-name-note">※ 姓名需與身分證相同</small></h4>
           <label class="field"><span>${required ? '加保狀態' : '是否加保旅遊平安險'}</span><select data-insurance-field="travelInsurance" ${required ? 'disabled aria-disabled="true"' : ''}>
             ${required ? '<option value="YES" selected>必須加保（加收50元）</option>' :
               `<option value="NO" ${insured ? '' : 'selected'}>否</option><option value="YES" ${insured ? 'selected' : ''}>是（加收50元）</option>`}
