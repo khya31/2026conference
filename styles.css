@@ -84,6 +84,7 @@
   .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
   .field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
   .field > span, .field-group legend { font-size: .84rem; color: #42565c; font-weight: 800; }
+  .field > span .group-room-age-note { margin-left: 5px; color: var(--danger); font-size: .78rem; font-weight: 900; }
   .field-label-line { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: start; gap: 9px; min-width: 0; }
   .early-bird-status { display: inline-flex; align-items: center; justify-self: start; min-width: 0; padding: 3px 8px; border-radius: 10px; font-size: .76rem; line-height: 1.35; font-weight: 800; }
   .early-bird-status--paid { color: #805300; background: #fff1c7; }
