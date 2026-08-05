@@ -582,7 +582,8 @@
         return;
       }
       el.routeInfo.hidden = false;
-      const itinerary = itineraryTable(route.itinerary || []);
+      const itinerary = itineraryTable((route.itinerary || []).filter(item =>
+        !item.coachOnly || transport === 'COACH'));
       const routeNotes = route.notes && route.notes.length
         ? `<div class="route-notes"><strong>${escapeHtml(route.notesTitle || '行程備註')}</strong><ul>` +
           route.notes.map(note => `<li>${escapeHtml(note)}</li>`).join('') + '</ul></div>'
