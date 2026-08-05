@@ -1221,8 +1221,10 @@
     }
 
     async function loadReport() {
+      const applyButton = document.getElementById('applyFilters');
       try {
-        document.getElementById('applyFilters').disabled = true;
+        applyButton.disabled = true;
+        applyButton.textContent = '套用中…';
         const response = await server('getReportData', state.token, filters());
         if (!response || !response.ok) throw new Error(response && response.message || '讀取失敗');
         if (!state.filtersLoaded) {
@@ -1245,7 +1247,8 @@
           el.loginPanel.hidden = false;
         }
       } finally {
-        document.getElementById('applyFilters').disabled = false;
+        applyButton.disabled = false;
+        applyButton.textContent = '套用篩選';
       }
     }
 
