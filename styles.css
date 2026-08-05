@@ -212,6 +212,9 @@
   .stat-card--money span, .stat-card--money strong { color: white; }
   .filter-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
   .field--wide { grid-column: span 2; }
+  .report-view-field select { border-width: 2px; border-color: var(--brand); font-weight: 800; }
+  .filter-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--line); }
+  .report-description { margin: -4px 0 16px; color: var(--muted); line-height: 1.6; }
   .report-actions { align-items: flex-start; }
   .download-menu { position: relative; }
   .download-options { position: absolute; right: 0; top: calc(100% + 8px); width: 220px; z-index: 10; border: 1px solid var(--line); border-radius: 12px; background: white; box-shadow: var(--shadow); padding: 6px; }

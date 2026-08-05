@@ -1138,7 +1138,7 @@
   }
 
   function initReport() {
-    const state = { token: '', filtersLoaded: false, debounce: null };
+    const state = { token: '', filtersLoaded: false, columns: [] };
     const el = {
       loginPanel: document.getElementById('loginPanel'),
       loginForm: document.getElementById('loginForm'),
@@ -1146,34 +1146,42 @@
       loginButton: document.getElementById('loginButton'),
       loginMessage: document.getElementById('loginMessage'),
       app: document.getElementById('reportApp'),
+      stats: document.getElementById('reportStats'),
       table: document.getElementById('reportTable'),
+      title: document.getElementById('reportTitle'),
+      description: document.getElementById('reportDescription'),
       reportMessage: document.getElementById('reportMessage'),
       downloadButton: document.getElementById('downloadButton'),
-      downloadOptions: document.getElementById('downloadOptions')
+      view: document.getElementById('reportView')
     };
-    const columns = ['報名時間', '報名編號', '主報名者', '手機', '電子郵件', '報名形式', '人數', '召會', '照顧區', '大區',
-      '僅參加聚會', '住宿人數', '房型', '交通工具', '旅遊方式', '路線', '聚會費', '住宿費', '房型加價',
-      '旅遊費', '旅平險人數', '旅平險費', '應收總額', '當場繳交提醒', '待確認項目'];
+    const filterMap = {
+      OVERVIEW: ['keyword', 'registrationType', 'church', 'careArea', 'district', 'staying', 'roomType', 'travelMode', 'route', 'transport'],
+      DUPLICATES: ['keyword', 'duplicateLevel', 'church', 'careArea', 'district'],
+      AREA: ['keyword', 'registrationType', 'church', 'careArea', 'district'],
+      COACH: ['keyword', 'route'], ROUTE: ['keyword', 'route', 'transport'],
+      RESTAURANT: ['keyword', 'restaurant', 'route'], INSURANCE: ['keyword', 'route', 'transport'],
+      ACTIVITY: ['keyword', 'activity', 'route'],
+      ACCOMMODATION: ['keyword', 'roomType', 'church', 'careArea', 'district'],
+      FINANCE: ['keyword', 'registrationType', 'church', 'careArea', 'district'],
+      TRANSPORT: ['keyword', 'transport', 'route'], ISSUES: ['keyword', 'church', 'careArea', 'district']
+    };
 
     el.loginForm.addEventListener('submit', login);
+    el.view.addEventListener('change', updateFilterVisibility);
+    document.getElementById('applyFilters').addEventListener('click', loadReport);
     document.getElementById('clearFilters').addEventListener('click', () => {
-      document.querySelectorAll('[data-filter]').forEach(input => input.value = '');
-      loadReport();
+      document.querySelectorAll('[data-filter]').forEach(input => {
+        if (input.dataset.filter !== 'view') input.value = '';
+      });
+      hideReportMessage();
     });
-    document.querySelectorAll('[data-filter]').forEach(input => {
-      input.addEventListener(input.tagName === 'INPUT' ? 'input' : 'change', () => {
-        clearTimeout(state.debounce);
-        state.debounce = setTimeout(loadReport, 260);
+    document.querySelectorAll('[data-filter="keyword"]').forEach(input => {
+      input.addEventListener('keydown', event => {
+        if (event.key === 'Enter') { event.preventDefault(); loadReport(); }
       });
     });
-    el.downloadButton.addEventListener('click', () => el.downloadOptions.hidden = !el.downloadOptions.hidden);
-    el.downloadOptions.addEventListener('click', event => {
-      const button = event.target.closest('[data-export]');
-      if (button) download(button.dataset.export);
-    });
-    document.addEventListener('click', event => {
-      if (!event.target.closest('.download-menu')) el.downloadOptions.hidden = true;
-    });
+    el.downloadButton.addEventListener('click', download);
+    updateFilterVisibility();
 
     async function login(event) {
       event.preventDefault();
@@ -1203,16 +1211,31 @@
       return result;
     }
 
+    function updateFilterVisibility() {
+      const allowed = filterMap[el.view.value] || [];
+      document.querySelectorAll('[data-filter-wrap]').forEach(wrapper => {
+        const active = allowed.includes(wrapper.dataset.filterWrap);
+        wrapper.hidden = !active;
+        if (!active) wrapper.querySelector('[data-filter]').value = '';
+      });
+    }
+
     async function loadReport() {
       try {
+        document.getElementById('applyFilters').disabled = true;
         const response = await server('getReportData', state.token, filters());
         if (!response || !response.ok) throw new Error(response && response.message || '讀取失敗');
         if (!state.filtersLoaded) {
           populateFilters(response.filterOptions);
           state.filtersLoaded = true;
         }
-        renderStats(response.stats);
-        renderTable(response.registrations);
+        renderStats(response.metrics || []);
+        state.columns = response.columns || [];
+        el.title.textContent = response.title || '報名資料';
+        el.description.textContent = response.description || '';
+        renderTable(response.rows || []);
+        document.getElementById('routeStats').innerHTML = (response.pills || [])
+          .map(item => `<span class="route-pill">${escapeHtml(item)}</span>`).join('');
         hideReportMessage();
       } catch (error) {
         showReportMessage(error.message, true);
@@ -1221,13 +1244,17 @@
           el.app.hidden = true;
           el.loginPanel.hidden = false;
         }
+      } finally {
+        document.getElementById('applyFilters').disabled = false;
       }
     }
 
     function populateFilters(options) {
       const map = {
         registrationType: options.registrationTypes, church: options.churches, careArea: options.careAreas,
-        district: options.districts, roomType: options.roomTypes, travelMode: options.travelModes, route: options.routes
+        district: options.districts, roomType: options.roomTypes, travelMode: options.travelModes, route: options.routes,
+        transport: options.transports, restaurant: options.restaurants, activity: options.activities,
+        duplicateLevel: options.duplicateLevels
       };
       Object.keys(map).forEach(key => {
         const select = document.querySelector(`[data-filter="${key}"]`);
@@ -1236,20 +1263,16 @@
       });
     }
 
-    function renderStats(stats) {
-      document.getElementById('statRegistrations').textContent = stats.registrationCount;
-      document.getElementById('statParticipants').textContent = stats.participantCount;
-      document.getElementById('statStaying').textContent = stats.accommodationCount;
-      document.getElementById('statTotal').textContent = money(stats.totalDue);
-      document.getElementById('routeStats').innerHTML = Object.keys(stats.routeCounts)
-        .map(route => `<span class="route-pill">${escapeHtml(route)}：${stats.routeCounts[route]}人</span>`).join('');
+    function renderStats(metrics) {
+      el.stats.innerHTML = metrics.map(metric => `<article class="stat-card ${metric.money ? 'stat-card--money' : ''}">` +
+        `<span>${escapeHtml(metric.label)}</span><strong>${metric.money ? money(metric.value) : escapeHtml(metric.value)}</strong></article>`).join('');
     }
 
     function renderTable(rows) {
-      el.table.tHead.innerHTML = '<tr>' + columns.map(column => `<th>${escapeHtml(column)}</th>`).join('') + '</tr>';
-      el.table.tBodies[0].innerHTML = rows.map(row => '<tr>' + columns.map(column => {
+      el.table.tHead.innerHTML = '<tr>' + state.columns.map(column => `<th>${escapeHtml(column)}</th>`).join('') + '</tr>';
+      el.table.tBodies[0].innerHTML = rows.map(row => '<tr>' + state.columns.map(column => {
         let value = row[column];
-        const isMoney = ['住宿費', '房型加價', '旅遊費', '應收總額'].includes(column);
+        const isMoney = ['基本費', '住宿費', '房型加價', '旅遊費', '保險費', '應收總額'].includes(column);
         if (column === '報名時間' && value) value = new Date(value).toLocaleString('zh-TW', { hour12: false });
         if (isMoney) value = money(value);
         return `<td class="${isMoney ? 'money' : ''}">${escapeHtml(value)}</td>`;
@@ -1257,12 +1280,11 @@
       document.getElementById('resultCount').textContent = `目前顯示 ${rows.length} 筆`;
     }
 
-    async function download(type) {
-      el.downloadOptions.hidden = true;
+    async function download() {
       el.downloadButton.disabled = true;
       el.downloadButton.textContent = '產生中…';
       try {
-        const response = await server('downloadExcel', state.token, type, filters());
+        const response = await server('downloadExcel', state.token, 'current', filters());
         if (!response || !response.ok) throw new Error(response && response.message || '下載失敗');
         const bytes = base64ToBytes(response.base64);
         const blob = new Blob([bytes], { type: response.mimeType });
@@ -1279,7 +1301,7 @@
         showReportMessage(error.message, true);
       } finally {
         el.downloadButton.disabled = false;
-        el.downloadButton.textContent = '下載 Excel ▾';
+        el.downloadButton.textContent = '下載目前名單 Excel';
       }
     }
 
