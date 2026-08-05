@@ -186,6 +186,9 @@
         return;
       }
       const card = event.target.closest('.member-card');
+      if (event.target === el.routeId || event.target.name === 'transportMode' || event.target.name === 'travelMode') {
+        el.routeOptions.innerHTML = '';
+      }
       if (event.target.name === 'registrationType') updateRegistrationType();
       if (event.target === el.meetingOnly) updateMeetingOnly();
       if (event.target === el.accommodation) updateAccommodation();
@@ -582,8 +585,9 @@
         return;
       }
       el.routeInfo.hidden = false;
+      const options = collectRouteOptions();
       const itinerary = itineraryTable((route.itinerary || []).filter(item =>
-        !item.coachOnly || transport === 'COACH'));
+        includeRouteItem(item, transport, options)));
       const routeNotes = route.notes && route.notes.length
         ? `<div class="route-notes"><strong>${escapeHtml(route.notesTitle || '行程備註')}</strong><ul>` +
           route.notes.map(note => `<li>${escapeHtml(note)}</li>`).join('') + '</ul></div>'
@@ -591,7 +595,7 @@
       el.routeInfo.innerHTML = `<strong>${escapeHtml(route.name)}</strong><br>${escapeHtml(route.description)}` +
         (selfPay ? '<br><b>自行購票及用餐：旅遊費不納入報名總額。</b>' : '') + itinerary + routeNotes;
       el.routeDetailTable.innerHTML = detailTable((route.details || []).filter(item =>
-        !item.coachOnly || transport === 'COACH'));
+        includeRouteItem(item, transport, options)));
       renderRouteOptions(route);
       renderFareNotice(route);
       el.onsiteTable.innerHTML = mode === 'STANDARD' ? priceTable('當場繳交價目表', onsiteRows(route, collectRouteOptions())) : '';
@@ -677,6 +681,16 @@
       const existing = collectRouteOptions();
       const count = participantPayload().length;
       let html = '';
+      if (['R03', 'R08'].includes(route.id) && transportMode() === 'CARPOOL') {
+        const restaurant = route.id === 'R03' ? '珍饌庭園餐廳（每人300元，0～5歲幼兒免費）' :
+          '莊記甕窯雞（每人350元）';
+        html = `<fieldset class="field-group optional-lunch"><legend>是否參加10/4午餐（整組統一）</legend>` +
+          `<p>本組所有成員須選擇相同安排；參加地點：${escapeHtml(restaurant)}。</p>` +
+          `<div class="choice-grid choice-grid--two">` +
+          `<label class="choice compact"><input type="radio" name="r10_4Lunch" value="YES" ${existing.r10_4Lunch === 'YES' ? 'checked' : ''} required><span><strong>參加</strong><small>全組餐費納入報名總額</small></span></label>` +
+          `<label class="choice compact"><input type="radio" name="r10_4Lunch" value="NO" ${existing.r10_4Lunch === 'NO' ? 'checked' : ''} required><span><strong>不參加</strong><small>10/4午餐自行安排</small></span></label>` +
+          `</div></fieldset>`;
+      }
       if (route.id === 'R04') {
         html = countField('水上活動參加人數（其餘人員可在沙灘休息）',
           'r4WaterCount', count, existing.r4WaterCount);
@@ -768,7 +782,16 @@
         const input = el.form.querySelector(`[name="${name}"]`);
         if (input) result[name] = input.value;
       });
+      const october4Lunch = el.form.querySelector('[name="r10_4Lunch"]:checked');
+      if (october4Lunch) result.r10_4Lunch = october4Lunch.value;
       return result;
+    }
+
+    function includeRouteItem(item, transport, options) {
+      if (!item.coachOnly) return true;
+      if (transport === 'COACH') return true;
+      return Boolean(item.optionalCarpoolLunch && transport === 'CARPOOL' &&
+        options.r10_4Lunch === 'YES');
     }
 
     function participantPayload() {
@@ -902,14 +925,17 @@
     }
 
     function memberTravelFee(member, index, routeId, options, transport, group, activityIndices) {
+      const october4Lunch = ['R03', 'R08'].includes(routeId) &&
+        (transport === 'COACH' || (transport === 'CARPOOL' && options.r10_4Lunch === 'YES'));
+      const infant = member.identityCategory === 'CHILD' && member.childAgeBand === 'INFANT';
       if (routeId === 'R01') return 400;
       if (routeId === 'R02') return 203 + 361;
-      if (routeId === 'R03') return 350 + 300 + (transport === 'COACH' ? 600 : 0);
+      if (routeId === 'R03') return 350 + (october4Lunch && !infant ? 300 : 0) + (transport === 'COACH' ? 600 : 0);
       if (routeId === 'R04') return (activityIndices.includes(index) ? 500 : 0) + 500;
       if (routeId === 'R05') return 450;
       if (routeId === 'R06') return 300;
       if (routeId === 'R07') return seaTicket(member, group) + 95;
-      if (routeId === 'R08') return forestTicket(member) + 300 + 350 + (transport === 'COACH' ? 600 : 0);
+      if (routeId === 'R08') return forestTicket(member) + 300 + (october4Lunch ? 350 : 0) + (transport === 'COACH' ? 600 : 0);
       return 0;
     }
 

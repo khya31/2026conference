@@ -49,6 +49,7 @@
   .step { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; color: var(--brand); background: var(--green-soft); font-size: .78rem; font-weight: 900; }
 
   .choice-grid { display: grid; gap: 12px; }
+  .choice-grid--two { grid-template-columns: repeat(2, 1fr); }
   .choice-grid--three { grid-template-columns: repeat(3, 1fr); }
   .choice-grid--four { grid-template-columns: repeat(4, 1fr); }
   .choice-stack { display: grid; gap: 10px; }
@@ -156,6 +157,9 @@
   .route-count li { margin: 4px 0; }
   .route-count small { display: block; margin-top: 8px; font-weight: 700; line-height: 1.55; }
   .route-options { display: grid; gap: 14px; margin: 16px 0; }
+  .optional-lunch { padding: 16px; border: 2px solid #d48a45; border-radius: 14px; background: var(--accent-soft); }
+  .optional-lunch legend { padding: 0 6px; color: var(--brand-dark); font-weight: 900; }
+  .optional-lunch p { margin: 0 0 12px; color: #70411d; font-weight: 700; }
   .activity-count { max-width: 520px; padding: 14px; border-radius: 12px; background: #f7f8f5; }
   .mini-table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: .9rem; }
   .mini-table caption { text-align: left; font-weight: 900; margin-bottom: 8px; color: var(--brand-dark); }
@@ -236,7 +240,7 @@
     .page-shell, .report-shell { width: min(100% - 20px, 1040px); margin-top: 10px; padding-bottom: 230px; }
     .card { padding: 20px 16px; border-radius: 15px; }
     .intro-card { padding: 15px 16px; }
-    .choice-grid--three, .choice-grid--four, .form-grid, .stats-grid, .filter-grid { grid-template-columns: 1fr; }
+    .choice-grid--two, .choice-grid--three, .choice-grid--four, .form-grid, .stats-grid, .filter-grid { grid-template-columns: 1fr; }
     .field--wide { grid-column: auto; }
     .section-heading { align-items: flex-start; }
     .member-card__body { padding: 16px; }
