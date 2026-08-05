@@ -1164,7 +1164,7 @@
   }
 
   function initReport() {
-    const state = { token: '', filtersLoaded: false, columns: [] };
+    const state = { token: '', filtersLoaded: false, filterOptions: null, columns: [] };
     const el = {
       loginPanel: document.getElementById('loginPanel'),
       loginForm: document.getElementById('loginForm'),
@@ -1181,7 +1181,7 @@
       view: document.getElementById('reportView')
     };
     const filterMap = {
-      OVERVIEW: ['keyword', 'registrationType', 'church', 'careArea', 'district', 'staying', 'roomType', 'travelMode', 'route', 'transport'],
+      OVERVIEW: ['registrationType', 'church', 'careArea', 'district'],
       DUPLICATES: ['keyword', 'duplicateLevel', 'church', 'careArea', 'district'],
       AREA: ['keyword', 'registrationType', 'church', 'careArea', 'district'],
       COACH: ['keyword', 'route'], ROUTE: ['keyword', 'route', 'transport'],
@@ -1193,7 +1193,10 @@
     };
 
     el.loginForm.addEventListener('submit', login);
-    el.view.addEventListener('change', updateFilterVisibility);
+    el.view.addEventListener('change', () => {
+      updateFilterVisibility();
+      updatePurposeFilterOptions(false);
+    });
     document.getElementById('applyFilters').addEventListener('click', loadReport);
     document.getElementById('clearFilters').addEventListener('click', () => {
       document.querySelectorAll('[data-filter]').forEach(input => {
@@ -1279,10 +1282,11 @@
     }
 
     function populateFilters(options) {
+      state.filterOptions = options;
       const map = {
         registrationType: options.registrationTypes, church: options.churches, careArea: options.careAreas,
-        district: options.districts, roomType: options.roomTypes, travelMode: options.travelModes, route: options.routes,
-        transport: options.transports, restaurant: options.restaurants, activity: options.activities,
+        district: options.districts, roomType: options.roomTypes, travelMode: options.travelModes,
+        restaurant: options.restaurants, activity: options.activities,
         duplicateLevel: options.duplicateLevels
       };
       Object.keys(map).forEach(key => {
@@ -1290,6 +1294,26 @@
         select.innerHTML = '<option value="">全部</option>' +
           map[key].map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');
       });
+      updatePurposeFilterOptions(false);
+    }
+
+    function updatePurposeFilterOptions(preserveSelection) {
+      if (!state.filterOptions) return;
+      const view = el.view.value;
+      const routeValues = (state.filterOptions.routesByView && state.filterOptions.routesByView[view]) ||
+        state.filterOptions.routes || [];
+      const transportValues = (state.filterOptions.transportsByView && state.filterOptions.transportsByView[view]) ||
+        state.filterOptions.transports || [];
+      setFilterOptions('route', routeValues, preserveSelection);
+      setFilterOptions('transport', transportValues, preserveSelection);
+    }
+
+    function setFilterOptions(name, values, preserveSelection) {
+      const select = document.querySelector(`[data-filter="${name}"]`);
+      const previous = preserveSelection ? select.value : '';
+      select.innerHTML = '<option value="">全部</option>' +
+        values.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');
+      select.value = values.includes(previous) ? previous : '';
     }
 
     function renderStats(metrics) {
