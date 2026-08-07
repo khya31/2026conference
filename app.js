@@ -80,7 +80,9 @@
       submitting: false,
       earlyBirdTimer: null,
       earlyBirdRequestId: 0,
-      insuranceByMember: {}
+      insuranceByMember: {},
+      personalRoomConfirmationKey: '',
+      roomCapacityConfirmationKey: ''
     };
 
     const el = {
@@ -101,8 +103,10 @@
       roomConfirmationPanel: document.getElementById('roomConfirmationPanel'),
       personalRoomConfirmation: document.getElementById('personalRoomConfirmation'),
       personalRoomConfirmed: document.getElementById('personalRoomConfirmed'),
+      personalRoomConfirmationText: document.getElementById('personalRoomConfirmationText'),
       roomCapacityConfirmation: document.getElementById('roomCapacityConfirmation'),
       roomCapacityConfirmed: document.getElementById('roomCapacityConfirmed'),
+      roomCapacityConfirmationText: document.getElementById('roomCapacityConfirmationText'),
       transportCard: document.getElementById('transportCard'),
       travelCard: document.getElementById('travelCard'),
       insuranceSurvey: document.getElementById('insuranceSurvey'),
@@ -303,6 +307,10 @@
           delete state.insuranceByMember[card.dataset.memberId];
           card.remove();
         });
+        const pricing = state.config && state.config.pricing;
+        if (!meetingOnly() && el.accommodation.value === 'HOWARD' && pricing) {
+          el.roomType.value = pricing.personalRoomWithoutConfirmation;
+        }
       }
       renumber();
       scheduleEarlyBirdCheck();
@@ -422,9 +430,22 @@
       updateAccommodation();
     }
 
-    function bedOccupantCount() {
-      return participantPayload(false).filter(member =>
-        member.identityCategory !== 'CHILD' || member.childAgeBand === 'CHILD_6_11').length;
+    function participantCountAge12Plus() {
+      return participantPayload(false).filter(member => member.identityCategory !== 'CHILD').length;
+    }
+
+    function selectedRoomLabel() {
+      const room = state.config && state.config.rules && state.config.rules.roomTypes.find(item =>
+        item.value === el.roomType.value);
+      return room ? room.label : '所選房型';
+    }
+
+    function roomCapacityMessage(age12PlusCount, roomCapacity, roomLabel) {
+      const common = '請更換房型或由青職組安排同住者。若無合適同住者，屆時需加收空床費。';
+      if (age12PlusCount < roomCapacity) {
+        return `您的報名人數未達房型人數，${common}`;
+      }
+      return `您的12歲以上報名人數無法完整分配至${roomLabel}，${common}`;
     }
 
     function updateAccommodation() {
@@ -432,7 +453,11 @@
       el.roomField.hidden = !hotel;
       el.roomType.required = hotel;
       el.roomType.disabled = meetingOnly();
-      if (!hotel) el.roomType.value = '';
+      if (!hotel) {
+        el.roomType.value = '';
+      } else if (registrationType() === 'PERSONAL' && !el.roomType.value && state.config && state.config.pricing) {
+        el.roomType.value = state.config.pricing.personalRoomWithoutConfirmation;
+      }
       el.hotelInfo.hidden = !hotel;
       updateRoomConfirmations();
     }
@@ -440,18 +465,47 @@
     function updateRoomConfirmations() {
       const pricing = state.config && state.config.pricing;
       if (!pricing) return;
+
       const hotel = !meetingOnly() && el.accommodation.value === 'HOWARD' && Boolean(el.roomType.value);
-      const personalNeeded = hotel && registrationType() === 'PERSONAL' &&
-        el.roomType.value !== pricing.personalRoomWithoutConfirmation;
+      const type = registrationType();
+      const roomLabel = selectedRoomLabel();
       const roomCapacity = Number(pricing.roomCapacities[el.roomType.value] || 0);
-      const capacityNeeded = hotel && ['TEAM', 'FAMILY'].includes(registrationType()) &&
-        roomCapacity > 0 && bedOccupantCount() < roomCapacity;
+      const age12PlusCount = participantCountAge12Plus();
+
+      const personalNeeded = hotel && type === 'PERSONAL' &&
+        el.roomType.value !== pricing.personalRoomWithoutConfirmation;
+      const personalKey = personalNeeded ? el.roomType.value : '';
+      if (personalKey !== state.personalRoomConfirmationKey) {
+        el.personalRoomConfirmed.checked = false;
+        state.personalRoomConfirmationKey = personalKey;
+      }
+      const personalMessage = personalNeeded
+        ? `您選擇的是${roomLabel}，同住者將由青職組安排。若無合適配對者，屆時需加收空床費。`
+        : '';
+      el.personalRoomConfirmationText.textContent = personalMessage;
       el.personalRoomConfirmation.hidden = !personalNeeded;
       el.personalRoomConfirmed.required = personalNeeded;
+      el.personalRoomConfirmed.setCustomValidity(personalNeeded && !el.personalRoomConfirmed.checked
+        ? personalMessage + '請先打勾確認。' : '');
       if (!personalNeeded) el.personalRoomConfirmed.checked = false;
+
+      const capacityNeeded = hotel && ['TEAM', 'FAMILY'].includes(type) && roomCapacity > 0 &&
+        age12PlusCount % roomCapacity !== 0;
+      const capacityKey = capacityNeeded ? `${type}|${el.roomType.value}|${age12PlusCount}` : '';
+      if (capacityKey !== state.roomCapacityConfirmationKey) {
+        el.roomCapacityConfirmed.checked = false;
+        state.roomCapacityConfirmationKey = capacityKey;
+      }
+      const capacityMessage = capacityNeeded
+        ? roomCapacityMessage(age12PlusCount, roomCapacity, roomLabel)
+        : '';
+      el.roomCapacityConfirmationText.textContent = capacityMessage;
       el.roomCapacityConfirmation.hidden = !capacityNeeded;
       el.roomCapacityConfirmed.required = capacityNeeded;
+      el.roomCapacityConfirmed.setCustomValidity(capacityNeeded && !el.roomCapacityConfirmed.checked
+        ? capacityMessage + '請先打勾確認。' : '');
       if (!capacityNeeded) el.roomCapacityConfirmed.checked = false;
+
       el.roomConfirmationPanel.hidden = !personalNeeded && !capacityNeeded;
     }
 
