@@ -34,19 +34,29 @@
         </div>
         <label class="meeting-only-choice">
           <input id="meetingOnly" type="checkbox">
-          <span><strong>僅參加聚會（交通工具、住宿、旅遊自理）</strong><small>每人 300 元，會計入報名時應繳明細；勾選後不調查交通工具、住宿及旅遊行程。</small></span>
+          <span><strong>僅參加聚會（交通工具、住宿、旅遊自理）</strong><small id="meetingOnlyDescription">勾選後不調查交通工具、住宿及旅遊行程。</small></span>
         </label>
         <div id="accommodationSection" class="accommodation-section">
           <div class="form-grid">
             <label class="field"><span>住宿方式</span><select id="groupAccommodation" required><option value="">請選擇</option><option value="HOWARD">福華度假飯店</option><option value="SELF">住宿自理</option></select></label>
-            <label id="groupRoomField" class="field room-type-field" hidden><span>整組房型</span><select id="groupRoomType"><option value="">請選擇</option><option value="SIX">六人房</option><option value="QUAD">四人房</option><option value="TRIPLE">三人房（成人＋350元）</option><option value="DOUBLE">二人房（成人＋950元）</option></select></label>
+            <label id="groupRoomField" class="field room-type-field" hidden><span>整組房型</span><select id="groupRoomType"><option value="">請選擇</option></select></label>
           </div>
           <div id="groupHotelInfo" class="hotel-banner" hidden>
             <div><span class="hotel-icon">宿</span></div>
             <div>
               <strong>全組住宿福華度假飯店</strong>
-              <p>房型加價：六人房及四人房 0 元、三人房每位成人加 350 元、二人房每位成人加 950 元。幼兒及兒童不加收房型費。</p>
+              <p id="hotelPricingDescription">房型與加價規則載入中。</p>
             </div>
+          </div>
+          <div id="roomConfirmationPanel" class="confirmation-panel" hidden>
+            <label id="personalRoomConfirmation" class="confirmation-choice" hidden>
+              <input id="personalRoomConfirmed" type="checkbox">
+              <span>我了解同住者將由青職組安排；若無合適配對者，屆時可能加收空床費。</span>
+            </label>
+            <label id="roomCapacityConfirmation" class="confirmation-choice" hidden>
+              <input id="roomCapacityConfirmed" type="checkbox">
+              <span>我了解需要床位的人數未達房型人數，將由青職組安排同住者；若無合適配對者，屆時可能加收空床費。</span>
+            </label>
           </div>
         </div>
       </section>
@@ -57,6 +67,9 @@
           <button id="addAdultButton" class="button button--secondary" type="button" hidden>＋ 新增同行者</button>
         </div>
         <div id="participants"></div>
+        <div class="contact-panel">
+          <label class="field field--wide"><span>報名副本電子郵件</span><input id="email" type="email" autocomplete="email" maxlength="120" placeholder="送出後寄送報名明細" required></label>
+        </div>
       </section>
 
       <section id="transportCard" class="card">
@@ -70,10 +83,10 @@
         <section id="insuranceSurvey" class="insurance-survey" hidden>
           <div class="insurance-survey__heading">
             <div>
-              <h3>加購旅遊平安保險</h3>
-              <p>每人可分開決定是否加保，每位加保費用 50 元。</p>
+              <h3 id="insuranceTitle">旅遊平安保險</h3>
+              <p id="insuranceDescription">依所選交通工具與路線顯示投保規則。</p>
             </div>
-            <span class="insurance-price">每人 50 元</span>
+            <span id="insurancePrice" class="insurance-price"></span>
           </div>
           <div id="insuranceParticipants" class="insurance-participants"></div>
         </section>
@@ -153,9 +166,9 @@
         <label class="field adult-only"><span>召會</span><select data-field="church" required></select></label>
         <label class="field adult-only kaohsiung-only"><span>照顧區</span><select data-field="careArea" required></select></label>
         <label class="field adult-only kaohsiung-only"><span>大區</span><select data-field="district" required></select></label>
-        <label class="field relationship-field" hidden><span>關係</span><input data-field="relationship" maxlength="30"></label>
+        <label class="field relationship-field" hidden><span>與主報名者的關係</span><input data-field="relationship" maxlength="30"></label>
         <label class="field"><span>年齡</span><select data-field="identityCategory" required></select></label>
-        <label class="field child-age-field" hidden><span>兒童年齡</span><select data-field="childAgeBand"><option value="">請選擇</option><option value="INFANT">幼兒（0～5歲）</option><option value="CHILD_6_11">兒童（6～11歲）</option></select></label>
+        <label class="field child-age-field" hidden><span>實際年齡</span><select data-field="actualAge"><option value="">請選擇</option><option value="0">0歲</option><option value="1">1歲</option><option value="2">2歲</option><option value="3">3歲</option><option value="4">4歲</option><option value="5">5歲</option><option value="6">6歲</option><option value="7">7歲</option><option value="8">8歲</option><option value="9">9歲</option><option value="10">10歲</option><option value="11">11歲</option></select></label>
       </div>
     </article>
   </template>
