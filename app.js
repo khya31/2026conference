@@ -319,7 +319,7 @@
       card.querySelector('[data-field="church"]').innerHTML = '<option value="">請選擇</option>' +
         state.config.areas.map(area => `<option value="${escapeHtml(area.name)}">${escapeHtml(area.name)}</option>`).join('');
       const identities = state.config.rules.identities.slice();
-      if (!isPrimary) identities.push({ value: 'CHILD', label: '兒童（0～11歲）' });
+      if (!isPrimary) identities.push({ value: 'CHILD', label: '兒童' });
       card.querySelector('[data-field="identityCategory"]').innerHTML = '<option value="">請選擇</option>' +
         identities.map(item => `<option value="${item.value}">${escapeHtml(item.label)}</option>`).join('');
       if (isPrimary) {
@@ -427,7 +427,7 @@
 
     function bedOccupantCount() {
       return participantPayload(false).filter(member =>
-        member.identityCategory !== 'CHILD' || Number(member.actualAge) >= 6).length;
+        member.identityCategory !== 'CHILD' || member.childAgeBand === 'CHILD_6_11').length;
     }
 
     function updateAccommodation() {
@@ -690,7 +690,7 @@
       if (route.id === 'R06') {
         const adultCount = members.filter(member => member.identityCategory !== 'CHILD').length;
         const childCount = members.length - adultCount;
-        const underThreeCount = members.filter(member => member.identityCategory === 'CHILD' && Number(member.actualAge) < 3).length;
+        const underThreeCount = members.filter(member => member.identityCategory === 'CHILD' && member.childAgeBand === 'INFANT').length;
         const capacities = state.config.activityCapacities || {};
         const snorkelRemaining = Math.max(0, Number(capacities.r6Snorkel || 0) - Number(state.config.route6ExistingSnorkelCount || 0));
         const snorkel = routePricingItem('R06', 'groupItems', 'r6SnorkelCount');
@@ -802,6 +802,7 @@
         return;
       }
       let heading = '';
+      let footnote = '';
       let ticketForMember;
       if (route.id === 'R07') {
         const projected = Number(state.config.route7ExistingCount || 0) + members.length;
@@ -811,14 +812,16 @@
           (group ? '已達團體票門檻，適用者採團體票。' : `尚差 ${threshold - projected} 人達到團體票門檻。`);
         ticketForMember = member => seaTicketInfo(member, group);
       } else {
-        heading = '森林遊樂區票價依兒童實際年齡與成人身分類別判定。';
+        heading = '森林遊樂區票價判定（活動日為假日）：';
+        footnote = '兒童資料採原本年齡區間：幼兒0～5歲以10元估算，若實際為0～2歲則免票；兒童6～11歲以75元估算，若實際為6歲則為10元。';
         ticketForMember = forestTicketInfo;
       }
       const rows = members.map((member, index) => {
         const ticket = ticketForMember(member);
         return `<li><strong>${escapeHtml(member.name || `成員${index + 1}`)}</strong>｜${escapeHtml(ageLabelForMember(member))}：${escapeHtml(ticket.label)} ${money(ticket.amount)}</li>`;
       }).join('');
-      el.route7Count.innerHTML = `<strong>${escapeHtml(heading)}</strong><ul>${rows}</ul>`;
+      el.route7Count.innerHTML = `<strong>${escapeHtml(heading)}</strong><ul>${rows}</ul>` +
+        (footnote ? `<small>${escapeHtml(footnote)}</small>` : '');
     }
 
     function participantPayload(captureInsurance = true) {
@@ -836,7 +839,7 @@
           careArea: fieldValue(card, 'careArea'),
           district: fieldValue(card, 'district'),
           identityCategory: fieldValue(card, 'identityCategory'),
-          actualAge: fieldValue(card, 'actualAge'),
+          childAgeBand: fieldValue(card, 'childAgeBand'),
           accommodation: sharedAccommodation,
           roomType: sharedRoomType,
           travelInsurance: insurance.travelInsurance,
@@ -855,7 +858,7 @@
     }
 
     function ageForMember(member) {
-      if (member.identityCategory === 'CHILD') return Number(member.actualAge);
+      if (member.identityCategory === 'CHILD') return member.childAgeBand === 'INFANT' ? 5 : 8;
       if (member.identityCategory === 'YOUNG_35') return 30;
       if (member.identityCategory === 'YOUNG_ADULT') return 40;
       if (member.identityCategory === 'MIDDLE') return 55;
@@ -866,8 +869,9 @@
     function ageLabelForMember(member) {
       if (!member.identityCategory) return '年齡尚未選擇';
       if (member.identityCategory === 'CHILD') {
-        const age = Number(member.actualAge);
-        return Number.isInteger(age) ? `${age}歲` : '兒童年齡尚未選擇';
+        if (member.childAgeBand === 'INFANT') return '幼兒（0～5歲）';
+        if (member.childAgeBand === 'CHILD_6_11') return '兒童（6～11歲）';
+        return '兒童年齡尚未選擇';
       }
       const item = state.config.rules.identities.find(identity => identity.value === member.identityCategory);
       return item ? item.label : '年齡尚未選擇';
@@ -884,10 +888,8 @@
 
     function forestTicketInfo(member) {
       const tickets = state.config.pricing.ticketTables.FOREST;
-      const age = ageForMember(member);
-      if (age <= 2) return tickets.infant;
-      if (age <= 6) return tickets.youngChild;
-      if (age <= 12) return tickets.child;
+      if (member.identityCategory === 'CHILD' && member.childAgeBand === 'INFANT') return tickets.youngChild;
+      if (member.identityCategory === 'CHILD') return tickets.child;
       if (member.identityCategory === 'ELDER') return tickets.elder;
       return tickets.adult;
     }
@@ -907,7 +909,7 @@
         if (item.condition === 'COACH' && transport !== 'COACH') return;
         if (item.condition === 'OCT4_LUNCH' && !(
           transport === 'COACH' || (transport === 'CARPOOL' && options.r10_4Lunch === 'YES'))) return;
-        const infantFree = item.infantFree && member.identityCategory === 'CHILD' && Number(member.actualAge) <= 5;
+        const infantFree = item.infantFree && member.identityCategory === 'CHILD' && member.childAgeBand === 'INFANT';
         items.push({ item: item.item, amount: infantFree ? 0 : Number(item.amount || 0) });
       });
       if (pricing.perSelectedMember) {
@@ -950,7 +952,7 @@
         const room = state.config.rules.roomTypes.find(item => item.value === member.roomType) || { surcharge: 0 };
         let base = 0;
         if (staying) {
-          if (!adult) base = Number(member.actualAge) <= 5 ? pricing.accommodation.infant : pricing.accommodation.child;
+          if (!adult) base = member.childAgeBand === 'INFANT' ? pricing.accommodation.infant : pricing.accommodation.child;
           else base = ['MIDDLE', 'ELDER'].includes(member.identityCategory)
             ? pricing.accommodation.seniorAdult : pricing.accommodation.youngAdult;
         } else if (!meetingOnly()) {
@@ -1054,7 +1056,7 @@
       if (route && route.id === 'R06') {
         const childCount = members.filter(member => member.identityCategory === 'CHILD').length;
         const adultCount = members.length - childCount;
-        const underThreeCount = members.filter(member => member.identityCategory === 'CHILD' && Number(member.actualAge) < 3).length;
+        const underThreeCount = members.filter(member => member.identityCategory === 'CHILD' && member.childAgeBand === 'INFANT').length;
         if (Number(options.r6SubmarineCount || 0) > adultCount ||
             Number(options.r6SubmarineChildCount || 0) > childCount ||
             Number(options.r6SubmarineInfantCount || 0) > underThreeCount ||
