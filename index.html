@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="高屏澎眾召會 2026年青職特會報名">
   <title>墾丁相調報名</title>
-  <link rel="stylesheet" href="styles.css?v=20260805-r39">
+  <link rel="stylesheet" href="styles.css?v=20260807-r42">
 </head>
 <body data-page="registration">
   <header class="site-header">
@@ -28,32 +28,35 @@
       <section class="card">
         <div class="section-heading"><div><span class="step">01</span><h2>報名形式</h2></div></div>
         <div class="choice-grid choice-grid--three">
-          <label class="choice"><input type="radio" name="registrationType" value="PERSONAL" checked><span><strong>個人報名</strong><small class="personal-room-note">※預設房型為四人房，由青職組安排同住者</small></span></label>
+          <label class="choice"><input type="radio" name="registrationType" value="PERSONAL" checked><span><strong>個人報名</strong><small>僅主報名者</small></span></label>
           <label class="choice"><input type="radio" name="registrationType" value="TEAM"><span><strong>相約／組隊報名</strong><small>可新增、刪除同行者；年齡可選兒童</small></span></label>
           <label class="choice"><input type="radio" name="registrationType" value="FAMILY"><span><strong>家庭報名</strong><small>可新增、刪除家人；年齡可選兒童</small></span></label>
         </div>
         <label class="meeting-only-choice">
           <input id="meetingOnly" type="checkbox">
-          <span><strong>僅參加聚會</strong><small>勾選後不需填寫住宿、交通及旅遊資料<br>每人基本費用 300 元</small></span>
+          <span><strong>僅參加聚會（交通工具、住宿、旅遊自理）</strong><small id="meetingOnlyDescription">勾選後不調查交通工具、住宿及旅遊行程。</small></span>
         </label>
         <div id="accommodationSection" class="accommodation-section">
           <div class="form-grid">
-            <label class="field"><span>住宿方式</span><select id="groupAccommodation" required><option value="">請選擇</option><option value="HOWARD">福華度假飯店</option><option value="SELF">不需代訂住宿</option></select></label>
-            <label id="groupRoomField" class="field room-type-field" hidden><span>整組房型 <small class="group-room-age-note">※僅算12歲以上人數；6歲以上兒童皆有床位，0～5歲幼兒共用床位。</small></span><select id="groupRoomType"><option value="">請選擇</option><option value="SIX">六人房</option><option value="QUAD">四人房</option><option value="TRIPLE">三人房（成人＋350元）</option><option value="DOUBLE">二人房（成人＋950元）</option></select></label>
-          </div>
-          <div id="personalRoomWarning" class="room-warning" hidden>
-            <p id="personalRoomWarningText"></p>
-            <label class="confirmation-check">
-              <input id="personalRoomConfirm" type="checkbox">
-              <span>我已了解並確認</span>
-            </label>
+            <label class="field"><span>住宿方式</span><select id="groupAccommodation" required><option value="">請選擇</option><option value="HOWARD">福華度假飯店</option><option value="SELF">住宿自理</option></select></label>
+            <label id="groupRoomField" class="field room-type-field" hidden><span>整組房型</span><select id="groupRoomType"><option value="">請選擇</option></select></label>
           </div>
           <div id="groupHotelInfo" class="hotel-banner" hidden>
             <div><span class="hotel-icon">宿</span></div>
             <div>
               <strong>全組住宿福華度假飯店</strong>
-              <p>房型加價：六人房及四人房 0 元、三人房每位成人加 350 元、二人房每位成人加 950 元。幼兒及兒童不加收房型費。</p>
+              <p id="hotelPricingDescription">房型與加價規則載入中。</p>
             </div>
+          </div>
+          <div id="roomConfirmationPanel" class="confirmation-panel" hidden>
+            <label id="personalRoomConfirmation" class="confirmation-choice" hidden>
+              <input id="personalRoomConfirmed" type="checkbox">
+              <span>我了解同住者將由青職組安排；若無合適配對者，屆時可能加收空床費。</span>
+            </label>
+            <label id="roomCapacityConfirmation" class="confirmation-choice" hidden>
+              <input id="roomCapacityConfirmed" type="checkbox">
+              <span>我了解需要床位的人數未達房型人數，將由青職組安排同住者；若無合適配對者，屆時可能加收空床費。</span>
+            </label>
           </div>
         </div>
       </section>
@@ -64,6 +67,9 @@
           <button id="addAdultButton" class="button button--secondary" type="button" hidden>＋ 新增同行者</button>
         </div>
         <div id="participants"></div>
+        <div class="contact-panel">
+          <label class="field field--wide"><span>報名副本電子郵件</span><input id="email" type="email" autocomplete="email" maxlength="120" placeholder="送出後寄送報名明細" required></label>
+        </div>
       </section>
 
       <section id="transportCard" class="card">
@@ -74,6 +80,16 @@
           <label class="choice"><input type="radio" name="transportMode" value="COACH" required><span><strong>搭乘遊覽車</strong><small>可選路線3、路線8，必須參加旅遊行程</small></span></label>
           <label class="choice"><input type="radio" name="transportMode" value="CARPOOL" required><span><strong>自行安排車輛共乘</strong><small>可選路線3～8</small></span></label>
         </div>
+        <section id="insuranceSurvey" class="insurance-survey" hidden>
+          <div class="insurance-survey__heading">
+            <div>
+              <h3 id="insuranceTitle">旅遊平安保險</h3>
+              <p id="insuranceDescription">依所選交通工具與路線顯示投保規則。</p>
+            </div>
+            <span id="insurancePrice" class="insurance-price"></span>
+          </div>
+          <div id="insuranceParticipants" class="insurance-participants"></div>
+        </section>
       </section>
 
       <section id="travelCard" class="card">
@@ -95,25 +111,9 @@
           <div id="onsiteTable"></div>
           <div id="pendingTable"></div>
         </div>
-        <section id="insuranceSurvey" class="insurance-survey" hidden>
-          <div class="insurance-survey__heading">
-            <div>
-              <h3 id="insuranceTitle">旅遊平安保險</h3>
-              <p id="insuranceDescription">每人可分開決定是否加保，每位加保費用 50 元。</p>
-            </div>
-            <span class="insurance-price">每人 50 元</span>
-          </div>
-          <div id="insuranceParticipants" class="insurance-participants"></div>
-        </section>
       </section>
 
       <section class="card">
-        <label class="field email-field">
-          <span>電子郵件</span>
-          <input id="email" type="email" autocomplete="email" maxlength="254" required
-            placeholder="請輸入接收報名副本的電子郵件">
-          <small class="input-help">完成報名後，系統會將行程及費用明細副本寄送至此信箱。</small>
-        </label>
         <label class="field">
           <span>備註（選填）</span>
           <textarea id="note" maxlength="500" rows="3" placeholder="可填寫需讓承辦人員知道的事項"></textarea>
@@ -141,10 +141,6 @@
     <h2>報名已送出</h2>
     <p>報名編號：<strong id="resultRegistrationId"></strong></p>
     <p>報名時應繳：<strong id="resultTotal"></strong></p>
-    <section id="resultEmail" class="result-info-card" hidden>
-      <h3>電子郵件副本</h3>
-      <p id="resultEmailText"></p>
-    </section>
     <section id="resultFinancial" class="result-info-card" hidden>
       <h3>財務窗口</h3>
       <p id="resultFinancialText"></p>
@@ -156,19 +152,6 @@
       <a id="resultRouteLink" class="button button--secondary" target="_blank" rel="noopener">開啟 LINE 群組邀請連結</a>
     </section>
     <button id="closeResult" class="button button--primary" type="button">完成</button>
-  </dialog>
-
-  <dialog id="roomCapacityDialog" class="result-dialog confirmation-dialog">
-    <h2>房型人數提醒</h2>
-    <p>您的報名人數未達房型人數，請更換房型或由青職組安排同住者。若無合適同住者，屆時需加收空床費。</p>
-    <label class="confirmation-check confirmation-check--dialog">
-      <input id="groupRoomConfirm" type="checkbox">
-      <span>我已了解並確認</span>
-    </label>
-    <div class="dialog-actions">
-      <button id="changeRoomButton" class="button button--secondary" type="button">返回更換房型</button>
-      <button id="confirmRoomButton" class="button button--primary" type="button" disabled>確認並繼續送出</button>
-    </div>
   </dialog>
 
   <template id="adultTemplate">
@@ -183,12 +166,13 @@
         <label class="field adult-only"><span>召會</span><select data-field="church" required></select></label>
         <label class="field adult-only kaohsiung-only"><span>照顧區</span><select data-field="careArea" required></select></label>
         <label class="field adult-only kaohsiung-only"><span>大區</span><select data-field="district" required></select></label>
+        <label class="field relationship-field" hidden><span>與主報名者的關係</span><input data-field="relationship" maxlength="30"></label>
         <label class="field"><span>年齡</span><select data-field="identityCategory" required></select></label>
-        <label class="field child-age-field" hidden><span>兒童年齡</span><select data-field="childAgeBand"><option value="">請選擇</option><option value="INFANT">幼兒（0～5歲）</option><option value="CHILD_6_11">兒童（6～11歲）</option></select></label>
+        <label class="field child-age-field" hidden><span>實際年齡</span><select data-field="actualAge"><option value="">請選擇</option><option value="0">0歲</option><option value="1">1歲</option><option value="2">2歲</option><option value="3">3歲</option><option value="4">4歲</option><option value="5">5歲</option><option value="6">6歲</option><option value="7">7歲</option><option value="8">8歲</option><option value="9">9歲</option><option value="10">10歲</option><option value="11">11歲</option></select></label>
       </div>
     </article>
   </template>
-  <script src="config.js?v=20260805-r39"></script>
-  <script src="app.js?v=20260805-r39"></script>
+  <script src="config.js?v=20260807-r42"></script>
+  <script src="app.js?v=20260807-r42"></script>
 </body>
 </html>
