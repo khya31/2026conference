@@ -1143,7 +1143,7 @@
   }
 
   function initReport() {
-    const state = { token: '', filtersLoaded: false, filterOptions: null, debounce: null };
+    const state = { token: '', filtersLoaded: false, filterOptions: null, appliedFilters: null };
     const el = {
       loginPanel: document.getElementById('loginPanel'),
       loginForm: document.getElementById('loginForm'),
@@ -1159,23 +1159,31 @@
       table: document.getElementById('reportTable'),
       resultCount: document.getElementById('resultCount'),
       reportMessage: document.getElementById('reportMessage'),
+      applyFilters: document.getElementById('applyFilters'),
       downloadButton: document.getElementById('downloadButton'),
       downloadOptions: document.getElementById('downloadOptions')
     };
 
     el.loginForm.addEventListener('submit', login);
-    document.getElementById('clearFilters').addEventListener('click', () => {
+    document.getElementById('clearFilters').addEventListener('click', async () => {
       document.querySelectorAll('[data-filter]').forEach(input => {
         if (input.dataset.filter !== 'view') input.value = '';
       });
       updateViewFilters();
-      loadReport();
+      updateAreaFilterOptions(false);
+      await loadReport(collectFilters());
     });
+    el.applyFilters.addEventListener('click', () => loadReport(collectFilters()));
     document.querySelectorAll('[data-filter]').forEach(input => {
       input.addEventListener(input.tagName === 'INPUT' ? 'input' : 'change', () => {
-        if (input.dataset.filter === 'view') updateViewFilters();
-        clearTimeout(state.debounce);
-        state.debounce = setTimeout(loadReport, 220);
+        if (input.dataset.filter === 'view') {
+          updateViewFilters();
+          const applied = Object.assign({}, state.appliedFilters || collectFilters(), { view: el.view.value });
+          loadReport(applied);
+          return;
+        }
+        if (input.dataset.filter === 'church') updateAreaFilterOptions(true);
+        if (input.dataset.filter === 'careArea') updateDistrictFilterOptions(true);
       });
     });
     el.downloadButton.addEventListener('click', () => {
@@ -1212,7 +1220,7 @@
       }
     }
 
-    function filters() {
+    function collectFilters() {
       const result = {};
       document.querySelectorAll('[data-filter]').forEach(input => {
         if (!input.closest('[hidden]')) result[input.dataset.filter] = input.value;
@@ -1241,26 +1249,65 @@
       select.value = [...select.options].some(option => option.value === selected) ? selected : '';
     }
 
-    async function loadReport() {
+    function updateAreaFilterOptions(clearDependent) {
+      if (!state.filterOptions) return;
+      const church = document.querySelector('[data-filter="church"]').value;
+      const hierarchy = state.filterOptions.areaHierarchy || {};
+      const careAreasByChurch = hierarchy.careAreasByChurch || {};
+      const values = church ? (careAreasByChurch[church] || []) : (state.filterOptions.careAreas || []);
+      const careArea = document.querySelector('[data-filter="careArea"]');
+      const previous = clearDependent ? '' : careArea.value;
+      replaceSelectOptions('careArea', values);
+      careArea.value = [...careArea.options].some(option => option.value === previous) ? previous : '';
+      updateDistrictFilterOptions(clearDependent);
+    }
+
+    function updateDistrictFilterOptions(clearDependent) {
+      if (!state.filterOptions) return;
+      const church = document.querySelector('[data-filter="church"]').value;
+      const careArea = document.querySelector('[data-filter="careArea"]').value;
+      const district = document.querySelector('[data-filter="district"]');
+      const hierarchy = state.filterOptions.areaHierarchy || {};
+      const byChurch = hierarchy.districtsByChurchAndCareArea || {};
+      const byCareArea = hierarchy.districtsByCareArea || {};
+      const values = careArea
+        ? ((church && byChurch[church] && byChurch[church][careArea]) || byCareArea[careArea] || [])
+        : [];
+      const previous = clearDependent ? '' : district.value;
+      replaceSelectOptions('district', values);
+      district.value = [...district.options].some(option => option.value === previous) ? previous : '';
+      district.disabled = !careArea || values.length === 0;
+    }
+
+    async function loadReport(requestFilters) {
       if (!state.token) return;
+      const nextFilters = Object.assign({}, requestFilters || state.appliedFilters || collectFilters());
+      el.applyFilters.disabled = true;
+      el.applyFilters.textContent = '套用中…';
       try {
-        const response = await server('getReportData', state.token, filters());
+        const response = await server('getReportData', state.token, nextFilters);
         if (!response || !response.ok) throw new Error(response && response.message || '讀取失敗');
         if (!state.filtersLoaded) {
           state.filterOptions = response.filterOptions || {};
           populateFilters(state.filterOptions);
           state.filtersLoaded = true;
           updateViewFilters();
+          updateAreaFilterOptions(false);
         }
+        state.appliedFilters = nextFilters;
         renderReport(response);
         hideReportMessage();
       } catch (error) {
         showReportMessage(error.message, true);
         if (/登入|逾時/.test(error.message)) {
           state.token = '';
+          state.appliedFilters = null;
           el.app.hidden = true;
           el.loginPanel.hidden = false;
         }
+      } finally {
+        el.applyFilters.disabled = false;
+        el.applyFilters.textContent = '套用篩選條件';
       }
     }
 
@@ -1268,8 +1315,6 @@
       const map = {
         registrationType: options.registrationTypes || [],
         church: options.churches || [],
-        careArea: options.careAreas || [],
-        district: options.districts || [],
         roomType: options.roomTypes || [],
         travelMode: options.travelModes || [],
         route: options.routes || [],
@@ -1321,7 +1366,7 @@
       el.downloadButton.disabled = true;
       el.downloadButton.textContent = '產生中…';
       try {
-        const response = await server('downloadExcel', state.token, type, filters());
+        const response = await server('downloadExcel', state.token, type, state.appliedFilters || collectFilters());
         if (!response || !response.ok) throw new Error(response && response.message || '下載失敗');
         const bytes = base64ToBytes(response.base64);
         const blob = new Blob([bytes], { type: response.mimeType });

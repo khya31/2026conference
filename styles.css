@@ -205,6 +205,7 @@
   .stat-card--money { background: var(--brand); color: white; }
   .stat-card--money span, .stat-card--money strong { color: white; }
   .filter-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .filter-actions { display: flex; justify-content: flex-end; margin-top: 18px; }
   .field--wide { grid-column: span 2; }
   .report-actions { align-items: flex-start; }
   .download-menu { position: relative; }
@@ -228,6 +229,7 @@
     .card { padding: 20px 16px; border-radius: 15px; }
     .intro-card { padding: 15px 16px; }
     .choice-grid--two, .choice-grid--three, .choice-grid--four, .form-grid, .stats-grid, .filter-grid { grid-template-columns: 1fr; }
+    .filter-actions .button { width: 100%; }
     .field--wide { grid-column: auto; }
     .section-heading { align-items: flex-start; }
     .member-card__body { padding: 16px; }
