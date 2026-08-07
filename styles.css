@@ -86,6 +86,7 @@
   .contact-panel { margin-top: 18px; padding-top: 18px; border-top: 1px dashed var(--line); }
   .field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
   .field > span, .field-group legend { font-size: .84rem; color: #42565c; font-weight: 800; }
+  .room-age-note { margin-left: 5px; color: var(--danger); font-size: .78rem; font-weight: 800; line-height: 1.45; }
   .field-label-line { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: start; gap: 9px; min-width: 0; }
   .early-bird-status { display: inline-flex; align-items: center; justify-self: start; min-width: 0; padding: 3px 8px; border-radius: 10px; font-size: .76rem; line-height: 1.35; font-weight: 800; }
   .early-bird-status--paid { color: #805300; background: #fff1c7; }
@@ -131,6 +132,7 @@
   .insurance-participants { display: grid; gap: 12px; }
   .insurance-member { padding: 15px; border: 1px solid #d9e5e1; border-radius: 14px; background: white; }
   .insurance-member h4 { margin: 0 0 12px; color: var(--brand-dark); }
+  .insurance-name-note { margin-left: 8px; color: var(--danger); font-size: .78rem; font-weight: 800; line-height: 1.45; }
   .insurance-details { margin-top: 14px; }
   .guardian-fields { grid-column: 1 / -1; padding-top: 14px; border-top: 1px dashed #b8d0c8; }
   .capacity-note { display: block; margin-top: 6px; color: #9a531f; font-weight: 900; }

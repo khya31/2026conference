@@ -613,7 +613,7 @@
           <label class="field"><span>監護人身分證字號</span><input data-insurance-field="guardianNationalId" maxlength="10" pattern="[A-Za-z][12][0-9]{8}" autocapitalize="characters" placeholder="例：A123456789" value="${escapeHtml(data.guardianNationalId)}" ${insured ? 'required' : ''}></label>
         </div>` : '';
         return `<article class="insurance-member" data-member-id="${memberId}" data-child="${child}">
-          <h4>${escapeHtml(role)}｜${escapeHtml(memberName)}</h4>
+          <h4>${escapeHtml(role)}｜${escapeHtml(memberName)}<span class="insurance-name-note">※ 姓名需與身分證相同</span></h4>
           <label class="field"><span>是否加保旅遊平安險</span>${insuranceSelect}</label>
           <div class="insurance-details form-grid" data-insurance-details ${insured ? '' : 'hidden'}>
             <label class="field"><span>被保險人出生年月日（民國年）</span><input data-insurance-field="insuredBirthRoc" inputmode="numeric" maxlength="10" pattern="[0-9]{1,3}[/-][0-9]{1,2}[/-][0-9]{1,2}" placeholder="例：85/01/02" value="${escapeHtml(data.insuredBirthRoc)}" ${insured ? 'required' : ''}></label>
@@ -694,9 +694,21 @@
 
     function itineraryTable(rows) {
       if (!rows.length) return '';
+      let previousDate = '';
+      const displayRows = rows.map(row => {
+        const rawTime = String(row.time || '').trim();
+        const match = rawTime.match(/^(\d{1,2}\/\d{1,2})\s+(.+)$/);
+        let displayTime = rawTime;
+        if (match) {
+          const currentDate = match[1];
+          displayTime = currentDate === previousDate ? match[2] : rawTime;
+          previousDate = currentDate;
+        }
+        return Object.assign({}, row, { displayTime });
+      });
       return `<div class="route-itinerary"><strong>詳細行程</strong><div class="route-itinerary-scroll">` +
         `<table aria-label="詳細行程"><thead><tr><th>時間</th><th>行程</th><th>說明</th></tr></thead><tbody>` +
-        rows.map(row => `<tr><td>${escapeHtml(row.time || '')}</td><td>${escapeHtml(row.activity || '')}</td><td>${escapeHtml(row.note || '')}</td></tr>`).join('') +
+        displayRows.map(row => `<tr><td>${escapeHtml(row.displayTime || '')}</td><td>${escapeHtml(row.activity || '')}</td><td>${escapeHtml(row.note || '')}</td></tr>`).join('') +
         '</tbody></table></div></div>';
     }
 
