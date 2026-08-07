@@ -354,12 +354,9 @@
       const primary = card.dataset.primary === 'true';
       const childAgeField = card.querySelector('.child-age-field');
       const ageInput = childAgeField.querySelector('select');
-      const relationshipField = card.querySelector('.relationship-field');
       childAgeField.hidden = !child;
       ageInput.required = child;
       if (!child) ageInput.value = '';
-      relationshipField.hidden = primary || registrationType() !== 'FAMILY';
-      relationshipField.querySelector('input').required = !relationshipField.hidden;
       card.querySelectorAll('.adult-only').forEach(field => field.hidden = child);
       card.querySelectorAll('.adult-only input, .adult-only select').forEach(input => {
         input.required = !child && input.dataset.optional !== 'true';
@@ -834,7 +831,6 @@
           role: card.dataset.primary === 'true' ? 'PRIMARY' : (registrationType() === 'FAMILY' ? 'FAMILY' : 'COMPANION'),
           name: fieldValue(card, 'name'),
           phone: fieldValue(card, 'phone'),
-          relationship: fieldValue(card, 'relationship'),
           church: fieldValue(card, 'church'),
           careArea: fieldValue(card, 'careArea'),
           district: fieldValue(card, 'district'),
