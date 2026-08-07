@@ -4,18 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
-  <title>報名總表</title>
-  <link rel="stylesheet" href="styles.css?v=20260805-r39">
+  <title>報名資料管理</title>
+  <link rel="stylesheet" href="styles.css?v=20260807-r42">
 </head>
 <body data-page="report">
   <header class="site-header report-header">
-    <div><span class="eyebrow">分工名單與統計</span><h1>報名總表</h1></div>
+    <div><span class="eyebrow">收款、人數與行政核對</span><h1>報名資料管理</h1></div>
     <a class="report-link" href="./">返回報名頁</a>
   </header>
+
   <main class="report-shell">
     <section id="loginPanel" class="login-card card">
       <h2>請輸入管理密碼</h2>
-      <p>本頁依不同負責人的用途提供查詢、點名、統計與 Excel 下載。</p>
+      <p>登入後可查看各用途報表、篩選資料與下載 Excel。</p>
       <form id="loginForm">
         <label class="field"><span>密碼</span><input id="reportPassword" type="password" autocomplete="current-password" required></label>
         <button id="loginButton" class="button button--primary" type="submit">登入</button>
@@ -24,49 +25,79 @@
     </section>
 
     <div id="reportApp" hidden>
-      <section id="reportStats" class="stats-grid"></section>
+      <section class="card report-control-card">
+        <div class="section-heading"><div><h2>報表用途</h2></div></div>
+        <div class="report-view-grid">
+          <label class="field field--wide">
+            <span>選擇報表</span>
+            <select data-filter="view" id="reportView">
+              <option value="OVERVIEW">人數統計表</option>
+              <option value="DUPLICATES">重複報名檢查</option>
+              <option value="AREA">區域名冊</option>
+              <option value="COACH">遊覽車名冊</option>
+              <option value="ROUTE">旅遊路線名冊</option>
+              <option value="RESTAURANT">餐廳人數統計</option>
+              <option value="INSURANCE">旅平險名冊</option>
+              <option value="ACTIVITY">活動人數統計</option>
+              <option value="ACCOMMODATION">住宿名冊</option>
+              <option value="FINANCE">收款核對表</option>
+              <option value="TRANSPORT">交通名冊</option>
+              <option value="ISSUES">異常資料檢查</option>
+            </select>
+          </label>
+        </div>
+      </section>
 
       <section class="card filter-card">
-        <div class="section-heading"><div><h2>名單用途與篩選條件</h2><p class="muted">選好條件後，按「套用篩選」才會更新名單。</p></div></div>
-        <div class="filter-grid">
-          <label class="field field--wide report-view-field"><span>名單用途</span><select data-filter="view" id="reportView">
-            <option value="OVERVIEW">人數統計表</option><option value="DUPLICATES">重複報名檢查</option>
-            <option value="AREA">照顧區／大區名單</option><option value="COACH">遊覽車點名表</option>
-            <option value="ROUTE">旅遊路線點名表</option><option value="RESTAURANT">餐廳用餐表</option>
-            <option value="INSURANCE">保險投保名單</option><option value="ACTIVITY">活動報名表</option>
-            <option value="ACCOMMODATION">住宿配房表</option><option value="FINANCE">財務收款表</option>
-            <option value="TRANSPORT">交通隊名單</option><option value="ISSUES">異常資料檢查</option>
-          </select></label>
-          <label class="field field--wide" data-filter-wrap="keyword"><span>姓名或手機</span><input data-filter="keyword" placeholder="輸入姓名或手機"></label>
-          <label class="field" data-filter-wrap="registrationType"><span>報名形式</span><select data-filter="registrationType"></select></label>
-          <label class="field" data-filter-wrap="church"><span>召會</span><select data-filter="church"></select></label>
-          <label class="field" data-filter-wrap="careArea"><span>照顧區</span><select data-filter="careArea"></select></label>
-          <label class="field" data-filter-wrap="district"><span>大區</span><select data-filter="district"></select></label>
-          <label class="field" data-filter-wrap="staying"><span>是否住宿</span><select data-filter="staying"><option value="">全部</option><option value="YES">有住宿</option><option value="NO">無住宿</option></select></label>
-          <label class="field" data-filter-wrap="roomType"><span>房型</span><select data-filter="roomType"></select></label>
-          <label class="field" data-filter-wrap="travelMode"><span>旅遊方式</span><select data-filter="travelMode"></select></label>
-          <label class="field" data-filter-wrap="route"><span>旅遊路線</span><select data-filter="route"></select></label>
-          <label class="field" data-filter-wrap="transport"><span>交通工具</span><select data-filter="transport"></select></label>
-          <label class="field" data-filter-wrap="restaurant"><span>餐廳／餐別</span><select data-filter="restaurant"></select></label>
-          <label class="field" data-filter-wrap="activity"><span>活動</span><select data-filter="activity"></select></label>
-          <label class="field" data-filter-wrap="duplicateLevel"><span>重複程度</span><select data-filter="duplicateLevel"></select></label>
+        <div class="section-heading">
+          <div><h2>篩選條件</h2></div>
+          <button id="clearFilters" class="button button--text" type="button">清除篩選</button>
         </div>
-        <div class="filter-actions"><button id="applyFilters" class="button button--primary" type="button">套用篩選</button><button id="clearFilters" class="button button--text" type="button">清除篩選</button></div>
+        <div class="filter-grid">
+          <label class="field field--wide"><span>關鍵字</span><input data-filter="keyword" placeholder="搜尋目前報表內容"></label>
+          <label class="field"><span>報名形式</span><select data-filter="registrationType"></select></label>
+          <label class="field"><span>召會</span><select data-filter="church"></select></label>
+          <label class="field"><span>照顧區</span><select data-filter="careArea"></select></label>
+          <label class="field"><span>大區</span><select data-filter="district"></select></label>
+          <label class="field"><span>是否住宿</span><select data-filter="staying"><option value="">全部</option><option value="YES">有住宿</option><option value="NO">無住宿</option></select></label>
+          <label class="field"><span>房型</span><select data-filter="roomType"></select></label>
+          <label class="field"><span>旅遊方式</span><select data-filter="travelMode"></select></label>
+          <label class="field"><span>路線</span><select data-filter="route"></select></label>
+          <label class="field"><span>交通工具</span><select data-filter="transport"></select></label>
+          <label class="field view-filter" data-views="RESTAURANT"><span>餐廳</span><select data-filter="restaurant"></select></label>
+          <label class="field view-filter" data-views="ACTIVITY"><span>活動</span><select data-filter="activity"></select></label>
+          <label class="field view-filter" data-views="DUPLICATES"><span>重複程度</span><select data-filter="duplicateLevel"></select></label>
+        </div>
       </section>
+
+      <section id="metricGrid" class="stats-grid"></section>
 
       <section class="card">
         <div class="section-heading report-actions">
-          <div><h2 id="reportTitle">人數統計表</h2><span id="resultCount" class="muted"></span></div>
-          <button id="downloadButton" class="button button--secondary" type="button">下載目前名單 Excel</button>
+          <div class="report-title-block">
+            <h2 id="reportTitle">報表</h2>
+            <p id="reportDescription" class="muted"></p>
+            <span id="resultCount" class="muted"></span>
+          </div>
+          <div class="download-menu">
+            <button id="downloadButton" class="button button--secondary" type="button">下載 Excel ▾</button>
+            <div id="downloadOptions" class="download-options" hidden>
+              <button type="button" data-export="current">目前報表</button>
+              <button type="button" data-export="registrations">報名總表</button>
+              <button type="button" data-export="participants">成員名冊</button>
+              <button type="button" data-export="fees">收費明細</button>
+              <button type="button" data-export="package">完整資料包（3分頁）</button>
+            </div>
+          </div>
         </div>
-        <p id="reportDescription" class="report-description"></p>
-        <div id="routeStats" class="route-stats"></div>
+        <div id="reportPills" class="route-stats"></div>
         <div class="table-wrap"><table id="reportTable"><thead></thead><tbody></tbody></table></div>
         <div id="reportMessage" class="message" hidden></div>
       </section>
     </div>
   </main>
-  <script src="config.js?v=20260805-r39"></script>
-  <script src="app.js?v=20260805-r39"></script>
+
+  <script src="config.js?v=20260807-r42"></script>
+  <script src="app.js?v=20260807-r42"></script>
 </body>
 </html>
