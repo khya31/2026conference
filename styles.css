@@ -215,11 +215,12 @@
   .route-stats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
   .route-pill { padding: 7px 10px; border-radius: 999px; background: var(--accent-soft); color: #70411d; font-size: .78rem; font-weight: 800; }
   .table-wrap { width: 100%; overflow: auto; border: 1px solid var(--line); border-radius: 12px; }
-  table { width: 100%; border-collapse: collapse; white-space: nowrap; font-size: .82rem; }
-  th { position: sticky; top: 0; background: #e8eef1; color: #34474d; text-align: left; z-index: 1; }
-  th, td { padding: 10px 12px; border-bottom: 1px solid #e5e8e5; }
+  table { width: 100%; border-collapse: collapse; white-space: nowrap; font-size: .82rem; --table-text-align: left; --table-money-align: right; }
+  th { position: sticky; top: 0; background: #e8eef1; color: #34474d; z-index: 1; }
+  th, td { padding: 10px 12px; border-bottom: 1px solid #e5e8e5; text-align: var(--table-text-align); }
   tbody tr:hover { background: #f8faf8; }
-  td.money { text-align: right; font-variant-numeric: tabular-nums; }
+  td.money { text-align: var(--table-money-align); font-variant-numeric: tabular-nums; }
+  #reportTable { --table-text-align: center; --table-money-align: center; }
 
   @media (max-width: 800px) {
     .site-header { min-height: 142px; padding: 18px; }
