@@ -40,6 +40,12 @@
         if (!data || data.channel !== 'qingzhi-gas-rpc-v1' || data.requestId !== requestId) return;
         settled = true;
         cleanup();
+        if (config.expectedApiVersion && data.apiVersion !== config.expectedApiVersion) {
+          reject(new Error(
+            `前後端版本不一致：目前後端為 ${data.apiVersion || '未知版本'}，前端要求 ${config.expectedApiVersion}。請確認 GitHub Pages 的 GAS API 網址與目前部署版本。`
+          ));
+          return;
+        }
         resolve(data.result);
       };
       const timer = setTimeout(() => {
