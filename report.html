@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
   <title>報名資料管理</title>
-  <link rel="stylesheet" href="styles.css?v=20260810-r53.4">
+  <link rel="stylesheet" href="styles.css?v=20260810-r54">
 </head>
 <body data-page="report">
   <header class="site-header report-header">
@@ -46,6 +46,10 @@
             </select>
           </label>
         </div>
+        <div id="reportLoading" class="report-loading" role="status" aria-live="polite" hidden>
+          <span class="report-loading__spinner" aria-hidden="true"></span>
+          <span>載入中…</span>
+        </div>
       </section>
 
       <section class="card filter-card">
@@ -67,6 +71,10 @@
           <label class="field view-filter" data-views="RESTAURANT"><span>餐廳</span><select data-filter="restaurant"></select></label>
           <label class="field view-filter" data-views="ACTIVITY"><span>活動</span><select data-filter="activity"></select></label>
           <label class="field view-filter" data-views="DUPLICATES"><span>重複程度</span><select data-filter="duplicateLevel"></select></label>
+        </div>
+        <div class="filter-actions">
+          <span id="filterPendingHint" class="muted" hidden>篩選條件尚未套用</span>
+          <button id="applyFilters" class="button button--primary" type="button">套用篩選條件</button>
         </div>
       </section>
 
@@ -97,7 +105,7 @@
     </div>
   </main>
 
-  <script src="config.js?v=20260810-r53.4"></script>
-  <script src="app.js?v=20260810-r53.4"></script>
+  <script src="config.js?v=20260810-r54"></script>
+  <script src="app.js?v=20260810-r54"></script>
 </body>
 </html>

@@ -196,11 +196,20 @@
   .result-route-group img { display: block; width: min(240px, 100%); aspect-ratio: 1; object-fit: contain; margin: 12px auto; border: 8px solid white; border-radius: 12px; background: white; }
   .result-route-group .button { display: inline-flex; text-decoration: none; }
 
-  .report-header { min-height: 160px; }
+  .report-header {
+    min-height: 160px;
+    padding-left: max(24px, calc((100vw - 1440px) / 2));
+    padding-right: max(24px, calc((100vw - 1440px) / 2));
+    text-align: left;
+  }
+  .report-header > div, .report-header h1 { text-align: left; }
   .login-card { width: min(460px, 100%); margin: 0 auto; }
   .report-control-card { padding-bottom: 24px; }
   .report-view-grid { display: grid; grid-template-columns: minmax(280px, 560px); }
-  .report-title-block { display: grid; gap: 5px; }
+  .report-loading { display: inline-flex; align-items: center; gap: 9px; margin-top: 14px; color: var(--brand-dark); font-weight: 800; }
+  .report-loading__spinner { width: 18px; height: 18px; border: 2px solid #b9d2cb; border-top-color: var(--brand); border-radius: 50%; animation: report-spin .7s linear infinite; }
+  @keyframes report-spin { to { transform: rotate(360deg); } }
+  .report-title-block { display: grid; gap: 5px; text-align: left; }
   .report-title-block h2, .report-title-block p { margin: 0; }
   .login-card form { display: grid; gap: 14px; }
   .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
@@ -218,6 +227,7 @@
   .stat-card--money .stat-card__detail span, .stat-card--money .stat-card__detail strong,
   .stat-card--money .stat-card__detail small { color: white; }
   .filter-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .filter-actions { display: flex; justify-content: flex-end; align-items: center; gap: 14px; margin-top: 18px; }
   .field--wide { grid-column: span 2; }
   .report-actions { align-items: flex-start; }
   .download-menu { position: relative; }
@@ -262,6 +272,8 @@
     .mobile-bottom-spacer { height: 190px; }
     .report-link { padding: 8px 12px; font-size: .84rem; }
     .stats-grid, .stats-grid--overview { grid-template-columns: repeat(2, 1fr); }
+    .filter-actions { align-items: stretch; flex-direction: column; }
+    .filter-actions .button { width: 100%; }
     .stat-card { padding: 15px; }
     .stat-card .stat-card__value { font-size: 1.35rem; }
   }

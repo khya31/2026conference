@@ -1180,7 +1180,15 @@
   }
 
   function initReport() {
-    const state = { token: '', filtersLoaded: false, filterOptions: null, debounce: null };
+    const state = {
+      token: '',
+      filterOptions: null,
+      reports: {},
+      appliedFilters: {},
+      appliedFiltersByView: {},
+      filtersDirty: false,
+      loading: false
+    };
     const el = {
       loginPanel: document.getElementById('loginPanel'),
       loginForm: document.getElementById('loginForm'),
@@ -1189,6 +1197,10 @@
       loginMessage: document.getElementById('loginMessage'),
       app: document.getElementById('reportApp'),
       view: document.getElementById('reportView'),
+      applyFilters: document.getElementById('applyFilters'),
+      clearFilters: document.getElementById('clearFilters'),
+      filterPendingHint: document.getElementById('filterPendingHint'),
+      loading: document.getElementById('reportLoading'),
       metricGrid: document.getElementById('metricGrid'),
       title: document.getElementById('reportTitle'),
       description: document.getElementById('reportDescription'),
@@ -1201,20 +1213,18 @@
     };
 
     el.loginForm.addEventListener('submit', login);
-    document.getElementById('clearFilters').addEventListener('click', () => {
-      document.querySelectorAll('[data-filter]').forEach(input => {
-        if (input.dataset.filter !== 'view') input.value = '';
-      });
-      updateViewFilters();
-      loadReport();
-    });
+    el.applyFilters.addEventListener('click', applyFilters);
+    el.clearFilters.addEventListener('click', clearFilters);
+    el.view.addEventListener('change', handleViewChange);
+
     document.querySelectorAll('[data-filter]').forEach(input => {
+      if (input.dataset.filter === 'view') return;
       input.addEventListener(input.tagName === 'INPUT' ? 'input' : 'change', () => {
-        if (input.dataset.filter === 'view') updateViewFilters();
-        clearTimeout(state.debounce);
-        state.debounce = setTimeout(loadReport, 220);
+        if (input.dataset.filter === 'church' || input.dataset.filter === 'careArea') syncAreaFilters();
+        markFiltersDirty();
       });
     });
+
     el.downloadButton.addEventListener('click', () => {
       el.downloadOptions.hidden = !el.downloadOptions.hidden;
     });
@@ -1239,7 +1249,7 @@
         el.password.value = '';
         el.loginPanel.hidden = true;
         el.app.hidden = false;
-        await loadReport();
+        await loadReportBundle();
       } catch (error) {
         el.loginMessage.textContent = error.message;
         el.loginMessage.hidden = false;
@@ -1249,24 +1259,70 @@
       }
     }
 
-    function filters() {
+    function currentFilterValues() {
       const result = {};
       document.querySelectorAll('[data-filter]').forEach(input => {
-        if (!input.closest('[hidden]')) result[input.dataset.filter] = input.value;
+        if (input.dataset.filter === 'view' || input.closest('[hidden]')) return;
+        result[input.dataset.filter] = input.value;
       });
-      result.view = el.view.value;
       return result;
+    }
+
+    function appliedFiltersForCurrentView() {
+      return Object.assign({}, state.appliedFiltersByView[el.view.value] || state.appliedFilters, { view: el.view.value });
+    }
+
+    function markFiltersDirty() {
+      state.filtersDirty = true;
+      el.filterPendingHint.hidden = false;
+    }
+
+    function markFiltersApplied() {
+      state.filtersDirty = false;
+      el.filterPendingHint.hidden = true;
+    }
+
+    function clearFilters() {
+      document.querySelectorAll('[data-filter]').forEach(input => {
+        if (input.dataset.filter !== 'view') input.value = '';
+      });
+      syncAreaFilters();
+      updateViewFilters();
+      markFiltersDirty();
+    }
+
+    async function handleViewChange() {
+      const preservePendingFilters = state.filtersDirty;
+      updateViewFilters();
+      if (!preservePendingFilters) syncViewSpecificControlsFromApplied();
+      setLoading(true);
+      try {
+        await nextPaint();
+        renderCurrentReport();
+      } finally {
+        setLoading(false);
+      }
     }
 
     function updateViewFilters() {
       const view = el.view.value;
       document.querySelectorAll('.view-filter').forEach(field => {
         field.hidden = !field.dataset.views.split(',').includes(view);
-        if (field.hidden) field.querySelector('select').value = '';
       });
       if (!state.filterOptions) return;
       replaceSelectOptions('route', (state.filterOptions.routesByView || {})[view] || state.filterOptions.routes || []);
       replaceSelectOptions('transport', (state.filterOptions.transportsByView || {})[view] || state.filterOptions.transports || []);
+    }
+
+    function syncViewSpecificControlsFromApplied() {
+      const applied = state.appliedFiltersByView[el.view.value];
+      if (!applied) return;
+      ['route', 'transport', 'restaurant', 'activity', 'duplicateLevel'].forEach(key => {
+        const input = document.querySelector(`[data-filter="${key}"]`);
+        if (!input) return;
+        const value = applied[key] || '';
+        if ([...input.options].some(option => option.value === value)) input.value = value;
+      });
     }
 
     function replaceSelectOptions(filterName, values) {
@@ -1274,39 +1330,14 @@
       if (!select) return;
       const selected = select.value;
       select.innerHTML = '<option value="">全部</option>' +
-        values.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');
+        (values || []).map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');
       select.value = [...select.options].some(option => option.value === selected) ? selected : '';
-    }
-
-    async function loadReport() {
-      if (!state.token) return;
-      try {
-        const response = await server('getReportData', state.token, filters());
-        if (!response || !response.ok) throw new Error(response && response.message || '讀取失敗');
-        if (!state.filtersLoaded) {
-          state.filterOptions = response.filterOptions || {};
-          populateFilters(state.filterOptions);
-          state.filtersLoaded = true;
-          updateViewFilters();
-        }
-        renderReport(response);
-        hideReportMessage();
-      } catch (error) {
-        showReportMessage(error.message, true);
-        if (/登入|逾時/.test(error.message)) {
-          state.token = '';
-          el.app.hidden = true;
-          el.loginPanel.hidden = false;
-        }
-      }
     }
 
     function populateFilters(options) {
       const map = {
         registrationType: options.registrationTypes || [],
         church: options.churches || [],
-        careArea: options.careAreas || [],
-        district: options.districts || [],
         roomType: options.roomTypes || [],
         travelMode: options.travelModes || [],
         route: options.routes || [],
@@ -1315,14 +1346,97 @@
         activity: options.activities || [],
         duplicateLevel: options.duplicateLevels || []
       };
-      Object.keys(map).forEach(key => {
-        const select = document.querySelector(`[data-filter="${key}"]`);
-        if (!select) return;
-        const selected = select.value;
-        select.innerHTML = '<option value="">全部</option>' +
-          map[key].map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');
-        if ([...select.options].some(option => option.value === selected)) select.value = selected;
-      });
+      Object.keys(map).forEach(key => replaceSelectOptions(key, map[key]));
+      syncAreaFilters();
+    }
+
+    function syncAreaFilters() {
+      if (!state.filterOptions) return;
+      const hierarchy = state.filterOptions.areaHierarchy || {};
+      const churchSelect = document.querySelector('[data-filter="church"]');
+      const careAreaSelect = document.querySelector('[data-filter="careArea"]');
+      const districtSelect = document.querySelector('[data-filter="district"]');
+      if (!churchSelect || !careAreaSelect || !districtSelect) return;
+
+      const church = churchSelect.value;
+      const previousCareArea = careAreaSelect.value;
+      const careAreasByChurch = hierarchy.careAreasByChurch || {};
+      const careAreas = church ? (careAreasByChurch[church] || []) : (state.filterOptions.careAreas || []);
+      replaceSelectOptions('careArea', careAreas);
+      if ([...careAreaSelect.options].some(option => option.value === previousCareArea)) careAreaSelect.value = previousCareArea;
+
+      const careArea = careAreaSelect.value;
+      const byChurchAndCare = hierarchy.districtsByChurchAndCareArea || {};
+      const byCare = hierarchy.districtsByCareArea || {};
+      let districts = state.filterOptions.districts || [];
+      if (careArea) {
+        districts = church && byChurchAndCare[church] ? (byChurchAndCare[church][careArea] || []) : (byCare[careArea] || []);
+      } else if (church && byChurchAndCare[church]) {
+        districts = [];
+        (careAreasByChurch[church] || []).forEach(area => {
+          (byChurchAndCare[church][area] || []).forEach(district => {
+            if (!districts.includes(district)) districts.push(district);
+          });
+        });
+      }
+      replaceSelectOptions('district', districts);
+    }
+
+    async function applyFilters() {
+      if (!state.token || state.loading) return;
+      await loadReportBundle();
+    }
+
+    async function loadReportBundle() {
+      if (!state.token) return;
+      const requestedFilters = currentFilterValues();
+      setLoading(true);
+      el.applyFilters.disabled = true;
+      try {
+        const response = await server('getReportBundle', state.token, requestedFilters);
+        if (!response || !response.ok) throw new Error(response && response.message || '讀取失敗');
+        state.filterOptions = response.filterOptions || state.filterOptions || {};
+        state.reports = response.reports || {};
+        state.appliedFilters = requestedFilters;
+        state.appliedFiltersByView = response.filtersByView || {};
+        populateFilters(state.filterOptions);
+        updateViewFilters();
+        syncViewSpecificControlsFromApplied();
+        renderCurrentReport();
+        markFiltersApplied();
+        hideReportMessage();
+      } catch (error) {
+        showReportMessage(error.message, true);
+        if (/登入|逾時/.test(error.message)) {
+          state.token = '';
+          el.app.hidden = true;
+          el.loginPanel.hidden = false;
+        }
+      } finally {
+        el.applyFilters.disabled = false;
+        setLoading(false);
+      }
+    }
+
+    function renderCurrentReport() {
+      const response = state.reports[el.view.value];
+      if (!response) {
+        showReportMessage('目前報表尚未載入，請按「套用篩選條件」重新載入。', true);
+        return;
+      }
+      renderReport(response);
+      hideReportMessage();
+    }
+
+    function setLoading(value) {
+      state.loading = value;
+      el.loading.hidden = !value;
+      el.table.setAttribute('aria-busy', value ? 'true' : 'false');
+      if (value) el.resultCount.textContent = '載入中…';
+    }
+
+    function nextPaint() {
+      return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     }
 
     function renderReport(response) {
@@ -1374,7 +1488,7 @@
       el.downloadButton.disabled = true;
       el.downloadButton.textContent = '產生中…';
       try {
-        const response = await server('downloadExcel', state.token, type, filters());
+        const response = await server('downloadExcel', state.token, type, appliedFiltersForCurrentView());
         if (!response || !response.ok) throw new Error(response && response.message || '下載失敗');
         const bytes = base64ToBytes(response.base64);
         const blob = new Blob([bytes], { type: response.mimeType });
@@ -1412,4 +1526,5 @@
       el.reportMessage.hidden = true;
     }
   }
+
 })();
