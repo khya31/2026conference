@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="高屏澎眾召會 2026年青職特會報名">
   <title>墾丁相調報名</title>
-  <link rel="stylesheet" href="styles.css?v=20260810-r52.4">
+  <link rel="stylesheet" href="styles.css?v=20260810-r52.6">
 </head>
 <body data-page="registration">
   <header class="site-header">
@@ -28,7 +28,7 @@
       <section class="card">
         <div class="section-heading"><div><span class="step">01</span><h2>報名形式</h2></div></div>
         <div class="choice-grid choice-grid--three">
-          <label class="choice"><input type="radio" name="registrationType" value="PERSONAL" checked><span><strong>個人報名</strong><small>僅主報名者</small></span></label>
+          <label class="choice"><input type="radio" name="registrationType" value="PERSONAL" checked><span><strong>個人報名</strong><small class="registration-note--danger">※預設房型為四人房，由青職組安排同住者</small></span></label>
           <label class="choice"><input type="radio" name="registrationType" value="TEAM"><span><strong>相約／組隊報名</strong><small>可新增、刪除同行者；年齡可選兒童</small></span></label>
           <label class="choice"><input type="radio" name="registrationType" value="FAMILY"><span><strong>家庭報名</strong><small>可新增、刪除家人；年齡可選兒童</small></span></label>
         </div>
@@ -39,7 +39,7 @@
         <div id="accommodationSection" class="accommodation-section">
           <div class="form-grid">
             <label class="field"><span>住宿方式</span><select id="groupAccommodation" required><option value="">請選擇</option><option value="HOWARD">福華度假飯店</option><option value="SELF">住宿自理</option></select></label>
-            <label id="groupRoomField" class="field room-type-field" hidden><span>整組房型</span><select id="groupRoomType"><option value="">請選擇</option></select></label>
+            <label id="groupRoomField" class="field room-type-field" hidden><span class="room-type-label">整組房型 <small class="field-inline-note">※僅算12歲以上人數；6歲以上兒童皆有床位，0～5歲幼兒共用床位。</small></span><select id="groupRoomType"><option value="">請選擇</option></select></label>
           </div>
           <div id="groupHotelInfo" class="hotel-banner" hidden>
             <div><span class="hotel-icon">宿</span></div>
@@ -51,11 +51,11 @@
           <div id="roomConfirmationPanel" class="confirmation-panel" hidden>
             <label id="personalRoomConfirmation" class="confirmation-choice" hidden>
               <input id="personalRoomConfirmed" type="checkbox">
-              <span>我了解同住者將由青職組安排；若無合適配對者，屆時可能加收空床費。</span>
+              <span id="personalRoomConfirmationText">您選擇的是四人房，同住者將由青職組安排。若無合適配對者，屆時需加收空床費。</span>
             </label>
             <label id="roomCapacityConfirmation" class="confirmation-choice" hidden>
               <input id="roomCapacityConfirmed" type="checkbox">
-              <span>我了解需要床位的人數未達房型人數，將由青職組安排同住者；若無合適配對者，屆時可能加收空床費。</span>
+              <span id="roomCapacityConfirmationText">您的報名人數未達房型人數，請更換房型或由青職組安排同住者。若無合適同住者，屆時需加收空床費。</span>
             </label>
           </div>
         </div>
@@ -67,9 +67,6 @@
           <button id="addAdultButton" class="button button--secondary" type="button" hidden>＋ 新增同行者</button>
         </div>
         <div id="participants"></div>
-        <div class="contact-panel">
-          <label class="field field--wide"><span>報名副本電子郵件</span><input id="email" type="email" autocomplete="email" maxlength="120" placeholder="送出後寄送報名明細" required></label>
-        </div>
       </section>
 
       <section id="transportCard" class="card">
@@ -117,6 +114,10 @@
         <label class="field">
           <span>備註（選填）</span>
           <textarea id="note" maxlength="500" rows="3" placeholder="可填寫需讓承辦人員知道的事項"></textarea>
+        </label>
+        <label class="field contact-email-field">
+          <span>報名副本電子郵件</span>
+          <input id="email" type="email" autocomplete="email" maxlength="120" placeholder="送出後寄送報名明細" required>
         </label>
       </section>
       <div class="mobile-bottom-spacer" aria-hidden="true"></div>
@@ -172,7 +173,7 @@
       </div>
     </article>
   </template>
-  <script src="config.js?v=20260810-r52.4"></script>
-  <script src="app.js?v=20260810-r52.4"></script>
+  <script src="config.js?v=20260810-r52.6"></script>
+  <script src="app.js?v=20260810-r52.6"></script>
 </body>
 </html>

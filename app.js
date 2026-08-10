@@ -109,6 +109,8 @@
       personalRoomConfirmed: document.getElementById('personalRoomConfirmed'),
       roomCapacityConfirmation: document.getElementById('roomCapacityConfirmation'),
       roomCapacityConfirmed: document.getElementById('roomCapacityConfirmed'),
+      personalRoomConfirmationText: document.getElementById('personalRoomConfirmationText'),
+      roomCapacityConfirmationText: document.getElementById('roomCapacityConfirmationText'),
       transportCard: document.getElementById('transportCard'),
       travelCard: document.getElementById('travelCard'),
       insuranceSurvey: document.getElementById('insuranceSurvey'),
@@ -415,9 +417,8 @@
       updateAccommodation();
     }
 
-    function bedOccupantCount() {
-      return participantPayload(false).filter(member =>
-        member.identityCategory !== 'CHILD' || Number(member.actualAge) >= 6).length;
+    function age12PlusMemberCount() {
+      return participantPayload(false).filter(member => member.identityCategory !== 'CHILD').length;
     }
 
     function updateAccommodation() {
@@ -425,7 +426,11 @@
       el.roomField.hidden = !hotel;
       el.roomType.required = hotel;
       el.roomType.disabled = meetingOnly();
-      if (!hotel) el.roomType.value = '';
+      if (!hotel) {
+        el.roomType.value = '';
+      } else if (registrationType() === 'PERSONAL' && !el.roomType.value && state.config && state.config.pricing) {
+        el.roomType.value = state.config.pricing.personalRoomWithoutConfirmation;
+      }
       el.hotelInfo.hidden = !hotel;
       updateRoomConfirmations();
     }
@@ -434,11 +439,25 @@
       const pricing = state.config && state.config.pricing;
       if (!pricing) return;
       const hotel = !meetingOnly() && el.accommodation.value === 'HOWARD' && Boolean(el.roomType.value);
-      const personalNeeded = hotel && registrationType() === 'PERSONAL' &&
-        el.roomType.value !== pricing.personalRoomWithoutConfirmation;
+      const type = registrationType();
       const roomCapacity = Number(pricing.roomCapacities[el.roomType.value] || 0);
-      const capacityNeeded = hotel && ['TEAM', 'FAMILY'].includes(registrationType()) &&
-        roomCapacity > 0 && bedOccupantCount() < roomCapacity;
+      const roomLabels = { SIX: '六人房', QUAD: '四人房', TRIPLE: '三人房', DOUBLE: '二人房' };
+      const selectedRoomLabel = roomLabels[el.roomType.value] || '所選房型';
+      const age12PlusCount = age12PlusMemberCount();
+      const personalNeeded = hotel && type === 'PERSONAL' &&
+        el.roomType.value !== pricing.personalRoomWithoutConfirmation;
+      const capacityNeeded = hotel && ['TEAM', 'FAMILY'].includes(type) &&
+        roomCapacity > 0 && age12PlusCount % roomCapacity !== 0;
+
+      if (el.personalRoomConfirmationText) {
+        el.personalRoomConfirmationText.textContent = `您選擇的是${selectedRoomLabel}，同住者將由青職組安排。若無合適配對者，屆時需加收空床費。`;
+      }
+      if (el.roomCapacityConfirmationText) {
+        el.roomCapacityConfirmationText.textContent = age12PlusCount < roomCapacity
+          ? '您的報名人數未達房型人數，請更換房型或由青職組安排同住者。若無合適同住者，屆時需加收空床費。'
+          : `您的12歲以上報名人數無法完整分配至${selectedRoomLabel}，請更換房型或由青職組安排同住者。若無合適同住者，屆時需加收空床費。`;
+      }
+
       el.personalRoomConfirmation.hidden = !personalNeeded;
       el.personalRoomConfirmed.required = personalNeeded;
       if (!personalNeeded) el.personalRoomConfirmed.checked = false;
@@ -552,7 +571,7 @@
           <label class="field"><span>監護人身分證字號</span><input data-insurance-field="guardianNationalId" maxlength="10" pattern="[A-Za-z][12][0-9]{8}" autocapitalize="characters" placeholder="例：A123456789" value="${escapeHtml(data.guardianNationalId)}" ${insured ? 'required' : ''}></label>
         </div>` : '';
         return `<article class="insurance-member" data-member-id="${memberId}" data-child="${child}">
-          <h4>${escapeHtml(role)}｜${escapeHtml(memberName)}</h4>
+          <h4>${escapeHtml(role)}｜${escapeHtml(memberName)} <span class="insurance-name-note">※ 姓名需與身分證相同</span></h4>
           <label class="field"><span>是否加保旅遊平安險</span>${insuranceSelect}</label>
           <div class="insurance-details form-grid" data-insurance-details ${insured ? '' : 'hidden'}>
             <label class="field"><span>被保險人出生年月日（民國年）</span><input data-insurance-field="insuredBirthRoc" inputmode="numeric" maxlength="10" pattern="[0-9]{1,3}[/-][0-9]{1,2}[/-][0-9]{1,2}" placeholder="例：85/01/02" value="${escapeHtml(data.insuredBirthRoc)}" ${insured ? 'required' : ''}></label>
@@ -633,10 +652,22 @@
 
     function itineraryTable(rows) {
       if (!rows.length) return '';
+      let lastDate = '';
+      const body = rows.map(row => {
+        const rawTime = String(row.time || '');
+        const match = rawTime.match(/^(\d{1,2}\/\d{1,2})\s*(.*)$/);
+        let displayTime = rawTime;
+        if (match) {
+          const date = match[1];
+          const clock = match[2];
+          displayTime = date === lastDate ? clock : (clock ? `${date} ${clock}` : date);
+          lastDate = date;
+        }
+        return `<tr><td>${escapeHtml(displayTime)}</td><td>${escapeHtml(row.activity || '')}</td><td>${escapeHtml(row.note || '')}</td></tr>`;
+      }).join('');
       return `<div class="route-itinerary"><strong>詳細行程</strong><div class="route-itinerary-scroll">` +
         `<table aria-label="詳細行程"><thead><tr><th>時間</th><th>行程</th><th>說明</th></tr></thead><tbody>` +
-        rows.map(row => `<tr><td>${escapeHtml(row.time || '')}</td><td>${escapeHtml(row.activity || '')}</td><td>${escapeHtml(row.note || '')}</td></tr>`).join('') +
-        '</tbody></table></div></div>';
+        body + '</tbody></table></div></div>';
     }
 
     function routePricingItem(routeId, collection, option) {
