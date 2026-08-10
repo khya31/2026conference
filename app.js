@@ -80,9 +80,7 @@
       submitting: false,
       earlyBirdTimer: null,
       earlyBirdRequestId: 0,
-      insuranceByMember: {},
-      personalRoomConfirmationKey: '',
-      roomCapacityConfirmationKey: ''
+      insuranceByMember: {}
     };
 
     const el = {
@@ -103,10 +101,8 @@
       roomConfirmationPanel: document.getElementById('roomConfirmationPanel'),
       personalRoomConfirmation: document.getElementById('personalRoomConfirmation'),
       personalRoomConfirmed: document.getElementById('personalRoomConfirmed'),
-      personalRoomConfirmationText: document.getElementById('personalRoomConfirmationText'),
       roomCapacityConfirmation: document.getElementById('roomCapacityConfirmation'),
       roomCapacityConfirmed: document.getElementById('roomCapacityConfirmed'),
-      roomCapacityConfirmationText: document.getElementById('roomCapacityConfirmationText'),
       transportCard: document.getElementById('transportCard'),
       travelCard: document.getElementById('travelCard'),
       insuranceSurvey: document.getElementById('insuranceSurvey'),
@@ -158,17 +154,6 @@
         const response = await server('getInitialData');
         if (!response || !response.ok) throw new Error(response && response.message || '初始化失敗');
         state.config = response;
-
-        // 主報名者卡片必須先建立；後續規則或顯示文字讀取失敗時，
-        // 不得讓整個成員區維持空白。
-        el.participants.replaceChildren();
-        addMember(true);
-
-        if (!response.event || !response.rules || !Array.isArray(response.rules.routes) ||
-            !Array.isArray(response.rules.roomTypes) || !Array.isArray(response.rules.identities)) {
-          throw new Error('GAS 回傳的初始化資料不完整，請確認已部署目前的 Code.gs。');
-        }
-
         document.getElementById('eventTitle').textContent = response.event.title;
         document.getElementById('eventDate').textContent = response.event.date;
         el.routeId.innerHTML = '<option value="">請選擇一條路線</option>';
@@ -182,9 +167,6 @@
           el.roomType.add(new Option(room.label + suffix, room.value));
         });
         const pricing = response.pricing;
-        if (!pricing || !pricing.routes || !pricing.ticketTables || !Array.isArray(pricing.insuranceModes)) {
-          throw new Error(`GAS 後端版本 ${response.version || '未知'} 尚未提供完整計價規則，請重新部署目前的 Code.gs。`);
-        }
         const selfOption = el.accommodation.querySelector('option[value="SELF"]');
         if (selfOption) selfOption.textContent = `住宿自理（每人${pricing.selfAccommodationFee}元）`;
         el.meetingOnlyDescription.textContent = `每人 ${pricing.meetingOnlyFee} 元，會計入報名時應繳明細；勾選後不調查交通工具、住宿及旅遊行程。`;
@@ -192,11 +174,9 @@
         el.hotelPricingDescription.textContent = response.rules.roomTypes.map(room =>
           `${room.label}${Number(room.surcharge || 0) ? `每位成人加 ${room.surcharge} 元` : '不加價'}`
         ).join('、') + '。幼兒及兒童不加收房型費。';
+        addMember(true);
         renderAll();
       } catch (error) {
-        if (!el.participants.querySelector('.member-card')) {
-          el.participants.innerHTML = '<div class="message message--error">成員資料載入失敗，請依上方錯誤訊息檢查後端部署版本。</div>';
-        }
         showError(error.message);
       }
     }
@@ -307,10 +287,6 @@
           delete state.insuranceByMember[card.dataset.memberId];
           card.remove();
         });
-        const pricing = state.config && state.config.pricing;
-        if (!meetingOnly() && el.accommodation.value === 'HOWARD' && pricing) {
-          el.roomType.value = pricing.personalRoomWithoutConfirmation;
-        }
       }
       renumber();
       scheduleEarlyBirdCheck();
@@ -327,7 +303,7 @@
       card.querySelector('[data-field="church"]').innerHTML = '<option value="">請選擇</option>' +
         state.config.areas.map(area => `<option value="${escapeHtml(area.name)}">${escapeHtml(area.name)}</option>`).join('');
       const identities = state.config.rules.identities.slice();
-      if (!isPrimary) identities.push({ value: 'CHILD', label: '兒童' });
+      if (!isPrimary) identities.push({ value: 'CHILD', label: '兒童（0～11歲）' });
       card.querySelector('[data-field="identityCategory"]').innerHTML = '<option value="">請選擇</option>' +
         identities.map(item => `<option value="${item.value}">${escapeHtml(item.label)}</option>`).join('');
       if (isPrimary) {
@@ -362,9 +338,12 @@
       const primary = card.dataset.primary === 'true';
       const childAgeField = card.querySelector('.child-age-field');
       const ageInput = childAgeField.querySelector('select');
+      const relationshipField = card.querySelector('.relationship-field');
       childAgeField.hidden = !child;
       ageInput.required = child;
       if (!child) ageInput.value = '';
+      relationshipField.hidden = primary || registrationType() !== 'FAMILY';
+      relationshipField.querySelector('input').required = !relationshipField.hidden;
       card.querySelectorAll('.adult-only').forEach(field => field.hidden = child);
       card.querySelectorAll('.adult-only input, .adult-only select').forEach(input => {
         input.required = !child && input.dataset.optional !== 'true';
@@ -430,22 +409,9 @@
       updateAccommodation();
     }
 
-    function participantCountAge12Plus() {
-      return participantPayload(false).filter(member => member.identityCategory !== 'CHILD').length;
-    }
-
-    function selectedRoomLabel() {
-      const room = state.config && state.config.rules && state.config.rules.roomTypes.find(item =>
-        item.value === el.roomType.value);
-      return room ? room.label : '所選房型';
-    }
-
-    function roomCapacityMessage(age12PlusCount, roomCapacity, roomLabel) {
-      const common = '請更換房型或由青職組安排同住者。若無合適同住者，屆時需加收空床費。';
-      if (age12PlusCount < roomCapacity) {
-        return `您的報名人數未達房型人數，${common}`;
-      }
-      return `您的12歲以上報名人數無法完整分配至${roomLabel}，${common}`;
+    function bedOccupantCount() {
+      return participantPayload(false).filter(member =>
+        member.identityCategory !== 'CHILD' || Number(member.actualAge) >= 6).length;
     }
 
     function updateAccommodation() {
@@ -453,11 +419,7 @@
       el.roomField.hidden = !hotel;
       el.roomType.required = hotel;
       el.roomType.disabled = meetingOnly();
-      if (!hotel) {
-        el.roomType.value = '';
-      } else if (registrationType() === 'PERSONAL' && !el.roomType.value && state.config && state.config.pricing) {
-        el.roomType.value = state.config.pricing.personalRoomWithoutConfirmation;
-      }
+      if (!hotel) el.roomType.value = '';
       el.hotelInfo.hidden = !hotel;
       updateRoomConfirmations();
     }
@@ -465,47 +427,18 @@
     function updateRoomConfirmations() {
       const pricing = state.config && state.config.pricing;
       if (!pricing) return;
-
       const hotel = !meetingOnly() && el.accommodation.value === 'HOWARD' && Boolean(el.roomType.value);
-      const type = registrationType();
-      const roomLabel = selectedRoomLabel();
-      const roomCapacity = Number(pricing.roomCapacities[el.roomType.value] || 0);
-      const age12PlusCount = participantCountAge12Plus();
-
-      const personalNeeded = hotel && type === 'PERSONAL' &&
+      const personalNeeded = hotel && registrationType() === 'PERSONAL' &&
         el.roomType.value !== pricing.personalRoomWithoutConfirmation;
-      const personalKey = personalNeeded ? el.roomType.value : '';
-      if (personalKey !== state.personalRoomConfirmationKey) {
-        el.personalRoomConfirmed.checked = false;
-        state.personalRoomConfirmationKey = personalKey;
-      }
-      const personalMessage = personalNeeded
-        ? `您選擇的是${roomLabel}，同住者將由青職組安排。若無合適配對者，屆時需加收空床費。`
-        : '';
-      el.personalRoomConfirmationText.textContent = personalMessage;
+      const roomCapacity = Number(pricing.roomCapacities[el.roomType.value] || 0);
+      const capacityNeeded = hotel && ['TEAM', 'FAMILY'].includes(registrationType()) &&
+        roomCapacity > 0 && bedOccupantCount() < roomCapacity;
       el.personalRoomConfirmation.hidden = !personalNeeded;
       el.personalRoomConfirmed.required = personalNeeded;
-      el.personalRoomConfirmed.setCustomValidity(personalNeeded && !el.personalRoomConfirmed.checked
-        ? personalMessage + '請先打勾確認。' : '');
       if (!personalNeeded) el.personalRoomConfirmed.checked = false;
-
-      const capacityNeeded = hotel && ['TEAM', 'FAMILY'].includes(type) && roomCapacity > 0 &&
-        age12PlusCount % roomCapacity !== 0;
-      const capacityKey = capacityNeeded ? `${type}|${el.roomType.value}|${age12PlusCount}` : '';
-      if (capacityKey !== state.roomCapacityConfirmationKey) {
-        el.roomCapacityConfirmed.checked = false;
-        state.roomCapacityConfirmationKey = capacityKey;
-      }
-      const capacityMessage = capacityNeeded
-        ? roomCapacityMessage(age12PlusCount, roomCapacity, roomLabel)
-        : '';
-      el.roomCapacityConfirmationText.textContent = capacityMessage;
       el.roomCapacityConfirmation.hidden = !capacityNeeded;
       el.roomCapacityConfirmed.required = capacityNeeded;
-      el.roomCapacityConfirmed.setCustomValidity(capacityNeeded && !el.roomCapacityConfirmed.checked
-        ? capacityMessage + '請先打勾確認。' : '');
       if (!capacityNeeded) el.roomCapacityConfirmed.checked = false;
-
       el.roomConfirmationPanel.hidden = !personalNeeded && !capacityNeeded;
     }
 
@@ -613,7 +546,7 @@
           <label class="field"><span>監護人身分證字號</span><input data-insurance-field="guardianNationalId" maxlength="10" pattern="[A-Za-z][12][0-9]{8}" autocapitalize="characters" placeholder="例：A123456789" value="${escapeHtml(data.guardianNationalId)}" ${insured ? 'required' : ''}></label>
         </div>` : '';
         return `<article class="insurance-member" data-member-id="${memberId}" data-child="${child}">
-          <h4>${escapeHtml(role)}｜${escapeHtml(memberName)}<span class="insurance-name-note">※ 姓名需與身分證相同</span></h4>
+          <h4>${escapeHtml(role)}｜${escapeHtml(memberName)}</h4>
           <label class="field"><span>是否加保旅遊平安險</span>${insuranceSelect}</label>
           <div class="insurance-details form-grid" data-insurance-details ${insured ? '' : 'hidden'}>
             <label class="field"><span>被保險人出生年月日（民國年）</span><input data-insurance-field="insuredBirthRoc" inputmode="numeric" maxlength="10" pattern="[0-9]{1,3}[/-][0-9]{1,2}[/-][0-9]{1,2}" placeholder="例：85/01/02" value="${escapeHtml(data.insuredBirthRoc)}" ${insured ? 'required' : ''}></label>
@@ -694,21 +627,9 @@
 
     function itineraryTable(rows) {
       if (!rows.length) return '';
-      let previousDate = '';
-      const displayRows = rows.map(row => {
-        const rawTime = String(row.time || '').trim();
-        const match = rawTime.match(/^(\d{1,2}\/\d{1,2})\s+(.+)$/);
-        let displayTime = rawTime;
-        if (match) {
-          const currentDate = match[1];
-          displayTime = currentDate === previousDate ? match[2] : rawTime;
-          previousDate = currentDate;
-        }
-        return Object.assign({}, row, { displayTime });
-      });
       return `<div class="route-itinerary"><strong>詳細行程</strong><div class="route-itinerary-scroll">` +
         `<table aria-label="詳細行程"><thead><tr><th>時間</th><th>行程</th><th>說明</th></tr></thead><tbody>` +
-        displayRows.map(row => `<tr><td>${escapeHtml(row.displayTime || '')}</td><td>${escapeHtml(row.activity || '')}</td><td>${escapeHtml(row.note || '')}</td></tr>`).join('') +
+        rows.map(row => `<tr><td>${escapeHtml(row.time || '')}</td><td>${escapeHtml(row.activity || '')}</td><td>${escapeHtml(row.note || '')}</td></tr>`).join('') +
         '</tbody></table></div></div>';
     }
 
@@ -753,7 +674,7 @@
       if (route.id === 'R06') {
         const adultCount = members.filter(member => member.identityCategory !== 'CHILD').length;
         const childCount = members.length - adultCount;
-        const underThreeCount = members.filter(member => member.identityCategory === 'CHILD' && member.childAgeBand === 'INFANT').length;
+        const underThreeCount = members.filter(member => member.identityCategory === 'CHILD' && Number(member.actualAge) < 3).length;
         const capacities = state.config.activityCapacities || {};
         const snorkelRemaining = Math.max(0, Number(capacities.r6Snorkel || 0) - Number(state.config.route6ExistingSnorkelCount || 0));
         const snorkel = routePricingItem('R06', 'groupItems', 'r6SnorkelCount');
@@ -865,7 +786,6 @@
         return;
       }
       let heading = '';
-      let footnote = '';
       let ticketForMember;
       if (route.id === 'R07') {
         const projected = Number(state.config.route7ExistingCount || 0) + members.length;
@@ -875,16 +795,14 @@
           (group ? '已達團體票門檻，適用者採團體票。' : `尚差 ${threshold - projected} 人達到團體票門檻。`);
         ticketForMember = member => seaTicketInfo(member, group);
       } else {
-        heading = '森林遊樂區票價判定（活動日為假日）：';
-        footnote = '兒童資料採原本年齡區間：幼兒0～5歲以10元估算，若實際為0～2歲則免票；兒童6～11歲以75元估算，若實際為6歲則為10元。';
+        heading = '森林遊樂區票價依兒童實際年齡與成人身分類別判定。';
         ticketForMember = forestTicketInfo;
       }
       const rows = members.map((member, index) => {
         const ticket = ticketForMember(member);
         return `<li><strong>${escapeHtml(member.name || `成員${index + 1}`)}</strong>｜${escapeHtml(ageLabelForMember(member))}：${escapeHtml(ticket.label)} ${money(ticket.amount)}</li>`;
       }).join('');
-      el.route7Count.innerHTML = `<strong>${escapeHtml(heading)}</strong><ul>${rows}</ul>` +
-        (footnote ? `<small>${escapeHtml(footnote)}</small>` : '');
+      el.route7Count.innerHTML = `<strong>${escapeHtml(heading)}</strong><ul>${rows}</ul>`;
     }
 
     function participantPayload(captureInsurance = true) {
@@ -897,11 +815,12 @@
           role: card.dataset.primary === 'true' ? 'PRIMARY' : (registrationType() === 'FAMILY' ? 'FAMILY' : 'COMPANION'),
           name: fieldValue(card, 'name'),
           phone: fieldValue(card, 'phone'),
+          relationship: fieldValue(card, 'relationship'),
           church: fieldValue(card, 'church'),
           careArea: fieldValue(card, 'careArea'),
           district: fieldValue(card, 'district'),
           identityCategory: fieldValue(card, 'identityCategory'),
-          childAgeBand: fieldValue(card, 'childAgeBand'),
+          actualAge: fieldValue(card, 'actualAge'),
           accommodation: sharedAccommodation,
           roomType: sharedRoomType,
           travelInsurance: insurance.travelInsurance,
@@ -920,7 +839,7 @@
     }
 
     function ageForMember(member) {
-      if (member.identityCategory === 'CHILD') return member.childAgeBand === 'INFANT' ? 5 : 8;
+      if (member.identityCategory === 'CHILD') return Number(member.actualAge);
       if (member.identityCategory === 'YOUNG_35') return 30;
       if (member.identityCategory === 'YOUNG_ADULT') return 40;
       if (member.identityCategory === 'MIDDLE') return 55;
@@ -931,9 +850,8 @@
     function ageLabelForMember(member) {
       if (!member.identityCategory) return '年齡尚未選擇';
       if (member.identityCategory === 'CHILD') {
-        if (member.childAgeBand === 'INFANT') return '幼兒（0～5歲）';
-        if (member.childAgeBand === 'CHILD_6_11') return '兒童（6～11歲）';
-        return '兒童年齡尚未選擇';
+        const age = Number(member.actualAge);
+        return Number.isInteger(age) ? `${age}歲` : '兒童年齡尚未選擇';
       }
       const item = state.config.rules.identities.find(identity => identity.value === member.identityCategory);
       return item ? item.label : '年齡尚未選擇';
@@ -950,8 +868,10 @@
 
     function forestTicketInfo(member) {
       const tickets = state.config.pricing.ticketTables.FOREST;
-      if (member.identityCategory === 'CHILD' && member.childAgeBand === 'INFANT') return tickets.youngChild;
-      if (member.identityCategory === 'CHILD') return tickets.child;
+      const age = ageForMember(member);
+      if (age <= 2) return tickets.infant;
+      if (age <= 6) return tickets.youngChild;
+      if (age <= 12) return tickets.child;
       if (member.identityCategory === 'ELDER') return tickets.elder;
       return tickets.adult;
     }
@@ -971,7 +891,7 @@
         if (item.condition === 'COACH' && transport !== 'COACH') return;
         if (item.condition === 'OCT4_LUNCH' && !(
           transport === 'COACH' || (transport === 'CARPOOL' && options.r10_4Lunch === 'YES'))) return;
-        const infantFree = item.infantFree && member.identityCategory === 'CHILD' && member.childAgeBand === 'INFANT';
+        const infantFree = item.infantFree && member.identityCategory === 'CHILD' && Number(member.actualAge) <= 5;
         items.push({ item: item.item, amount: infantFree ? 0 : Number(item.amount || 0) });
       });
       if (pricing.perSelectedMember) {
@@ -1014,7 +934,7 @@
         const room = state.config.rules.roomTypes.find(item => item.value === member.roomType) || { surcharge: 0 };
         let base = 0;
         if (staying) {
-          if (!adult) base = member.childAgeBand === 'INFANT' ? pricing.accommodation.infant : pricing.accommodation.child;
+          if (!adult) base = Number(member.actualAge) <= 5 ? pricing.accommodation.infant : pricing.accommodation.child;
           else base = ['MIDDLE', 'ELDER'].includes(member.identityCategory)
             ? pricing.accommodation.seniorAdult : pricing.accommodation.youngAdult;
         } else if (!meetingOnly()) {
@@ -1097,6 +1017,17 @@
       renderAll();
       if (!el.form.reportValidity()) return;
       const members = participantPayload();
+      const type = registrationType();
+      const age12PlusCount = members.filter(member => member.identityCategory !== 'CHILD').length;
+      const childCount = members.length - age12PlusCount;
+      if (type === 'TEAM' && age12PlusCount < 2) {
+        showError('相約／組隊報名至少需要2位12歲以上的報名者；目前只有1位，請改選「個人報名」。');
+        return;
+      }
+      if (type === 'FAMILY' && age12PlusCount < 2 && !(age12PlusCount === 1 && childCount >= 1)) {
+        showError('家庭報名需要至少2位12歲以上的報名者；若只有1位12歲以上報名者，至少需搭配1位0～11歲兒童。');
+        return;
+      }
       const route = currentRoute();
       const options = collectRouteOptions();
       if (!meetingOnly() && ['MOTORCYCLE', 'BICYCLE', 'COACH'].includes(transportMode()) && travelMode() === 'NONE') {
@@ -1118,7 +1049,7 @@
       if (route && route.id === 'R06') {
         const childCount = members.filter(member => member.identityCategory === 'CHILD').length;
         const adultCount = members.length - childCount;
-        const underThreeCount = members.filter(member => member.identityCategory === 'CHILD' && member.childAgeBand === 'INFANT').length;
+        const underThreeCount = members.filter(member => member.identityCategory === 'CHILD' && Number(member.actualAge) < 3).length;
         if (Number(options.r6SubmarineCount || 0) > adultCount ||
             Number(options.r6SubmarineChildCount || 0) > childCount ||
             Number(options.r6SubmarineInfantCount || 0) > underThreeCount ||
@@ -1209,7 +1140,7 @@
   }
 
   function initReport() {
-    const state = { token: '', filtersLoaded: false, filterOptions: null, appliedFilters: null };
+    const state = { token: '', filtersLoaded: false, filterOptions: null, debounce: null };
     const el = {
       loginPanel: document.getElementById('loginPanel'),
       loginForm: document.getElementById('loginForm'),
@@ -1225,31 +1156,23 @@
       table: document.getElementById('reportTable'),
       resultCount: document.getElementById('resultCount'),
       reportMessage: document.getElementById('reportMessage'),
-      applyFilters: document.getElementById('applyFilters'),
       downloadButton: document.getElementById('downloadButton'),
       downloadOptions: document.getElementById('downloadOptions')
     };
 
     el.loginForm.addEventListener('submit', login);
-    document.getElementById('clearFilters').addEventListener('click', async () => {
+    document.getElementById('clearFilters').addEventListener('click', () => {
       document.querySelectorAll('[data-filter]').forEach(input => {
         if (input.dataset.filter !== 'view') input.value = '';
       });
       updateViewFilters();
-      updateAreaFilterOptions(false);
-      await loadReport(collectFilters());
+      loadReport();
     });
-    el.applyFilters.addEventListener('click', () => loadReport(collectFilters()));
     document.querySelectorAll('[data-filter]').forEach(input => {
       input.addEventListener(input.tagName === 'INPUT' ? 'input' : 'change', () => {
-        if (input.dataset.filter === 'view') {
-          updateViewFilters();
-          const applied = Object.assign({}, state.appliedFilters || collectFilters(), { view: el.view.value });
-          loadReport(applied);
-          return;
-        }
-        if (input.dataset.filter === 'church') updateAreaFilterOptions(true);
-        if (input.dataset.filter === 'careArea') updateDistrictFilterOptions(true);
+        if (input.dataset.filter === 'view') updateViewFilters();
+        clearTimeout(state.debounce);
+        state.debounce = setTimeout(loadReport, 220);
       });
     });
     el.downloadButton.addEventListener('click', () => {
@@ -1286,7 +1209,7 @@
       }
     }
 
-    function collectFilters() {
+    function filters() {
       const result = {};
       document.querySelectorAll('[data-filter]').forEach(input => {
         if (!input.closest('[hidden]')) result[input.dataset.filter] = input.value;
@@ -1315,65 +1238,26 @@
       select.value = [...select.options].some(option => option.value === selected) ? selected : '';
     }
 
-    function updateAreaFilterOptions(clearDependent) {
-      if (!state.filterOptions) return;
-      const church = document.querySelector('[data-filter="church"]').value;
-      const hierarchy = state.filterOptions.areaHierarchy || {};
-      const careAreasByChurch = hierarchy.careAreasByChurch || {};
-      const values = church ? (careAreasByChurch[church] || []) : (state.filterOptions.careAreas || []);
-      const careArea = document.querySelector('[data-filter="careArea"]');
-      const previous = clearDependent ? '' : careArea.value;
-      replaceSelectOptions('careArea', values);
-      careArea.value = [...careArea.options].some(option => option.value === previous) ? previous : '';
-      updateDistrictFilterOptions(clearDependent);
-    }
-
-    function updateDistrictFilterOptions(clearDependent) {
-      if (!state.filterOptions) return;
-      const church = document.querySelector('[data-filter="church"]').value;
-      const careArea = document.querySelector('[data-filter="careArea"]').value;
-      const district = document.querySelector('[data-filter="district"]');
-      const hierarchy = state.filterOptions.areaHierarchy || {};
-      const byChurch = hierarchy.districtsByChurchAndCareArea || {};
-      const byCareArea = hierarchy.districtsByCareArea || {};
-      const values = careArea
-        ? ((church && byChurch[church] && byChurch[church][careArea]) || byCareArea[careArea] || [])
-        : [];
-      const previous = clearDependent ? '' : district.value;
-      replaceSelectOptions('district', values);
-      district.value = [...district.options].some(option => option.value === previous) ? previous : '';
-      district.disabled = !careArea || values.length === 0;
-    }
-
-    async function loadReport(requestFilters) {
+    async function loadReport() {
       if (!state.token) return;
-      const nextFilters = Object.assign({}, requestFilters || state.appliedFilters || collectFilters());
-      el.applyFilters.disabled = true;
-      el.applyFilters.textContent = '套用中…';
       try {
-        const response = await server('getReportData', state.token, nextFilters);
+        const response = await server('getReportData', state.token, filters());
         if (!response || !response.ok) throw new Error(response && response.message || '讀取失敗');
         if (!state.filtersLoaded) {
           state.filterOptions = response.filterOptions || {};
           populateFilters(state.filterOptions);
           state.filtersLoaded = true;
           updateViewFilters();
-          updateAreaFilterOptions(false);
         }
-        state.appliedFilters = nextFilters;
         renderReport(response);
         hideReportMessage();
       } catch (error) {
         showReportMessage(error.message, true);
         if (/登入|逾時/.test(error.message)) {
           state.token = '';
-          state.appliedFilters = null;
           el.app.hidden = true;
           el.loginPanel.hidden = false;
         }
-      } finally {
-        el.applyFilters.disabled = false;
-        el.applyFilters.textContent = '套用篩選條件';
       }
     }
 
@@ -1381,6 +1265,8 @@
       const map = {
         registrationType: options.registrationTypes || [],
         church: options.churches || [],
+        careArea: options.careAreas || [],
+        district: options.districts || [],
         roomType: options.roomTypes || [],
         travelMode: options.travelModes || [],
         route: options.routes || [],
@@ -1403,9 +1289,18 @@
       el.title.textContent = response.title || '報表';
       el.description.textContent = response.description || '';
       const metrics = response.metrics || [];
-      el.metricGrid.innerHTML = metrics.map(metric =>
-        `<article class="stat-card ${metric.money ? 'stat-card--money' : ''}"><span>${escapeHtml(metric.label)}</span><strong>${metric.money ? money(metric.value) : escapeHtml(metric.value)}</strong></article>`
-      ).join('');
+      el.metricGrid.classList.toggle('stats-grid--overview', response.view === 'OVERVIEW');
+      el.metricGrid.innerHTML = metrics.map(metric => {
+        const details = (metric.details || []).map(detail =>
+          `<div class="stat-card__detail"><span>${escapeHtml(detail.label)}</span>` +
+          `<strong>${escapeHtml(detail.value)}</strong>` +
+          (detail.note ? `<small>${escapeHtml(detail.note)}</small>` : '') + '</div>'
+        ).join('');
+        return `<article class="stat-card ${metric.money ? 'stat-card--money' : ''}">` +
+          `<span class="stat-card__label">${escapeHtml(metric.label)}</span>` +
+          `<strong class="stat-card__value">${metric.money ? money(metric.value) : escapeHtml(metric.value)}</strong>` +
+          (details ? `<div class="stat-card__details">${details}</div>` : '') + '</article>';
+      }).join('');
       el.metricGrid.hidden = metrics.length === 0;
       el.pills.innerHTML = (response.pills || []).map(text => `<span class="route-pill">${escapeHtml(text)}</span>`).join('');
       renderDynamicTable(response.columns || [], response.rows || []);
@@ -1414,17 +1309,22 @@
 
     function renderDynamicTable(columns, rows) {
       el.table.tHead.innerHTML = '<tr>' + columns.map(column => `<th>${escapeHtml(column)}</th>`).join('') + '</tr>';
-      el.table.tBodies[0].innerHTML = rows.map(row => '<tr>' + columns.map(column => {
-        let value = row[column];
-        const isDate = /時間$/.test(column) && value;
-        const isMoney = /金額|費$|總額|應收|小計/.test(column) && value !== '' && value != null && Number.isFinite(Number(value));
-        if (isDate) {
-          const date = new Date(value);
-          if (!Number.isNaN(date.getTime())) value = date.toLocaleString('zh-TW', { hour12: false });
-        }
-        if (isMoney) value = money(value);
-        return `<td class="${isMoney ? 'money' : ''}">${escapeHtml(value)}</td>`;
-      }).join('') + '</tr>').join('');
+      el.table.tBodies[0].innerHTML = rows.map(row => {
+        const isCareTotal = row['大區'] === '照顧區合計';
+        const isGrandTotal = row['召會'] === '總計' && row['大區'] === '總計';
+        const rowClass = isGrandTotal ? 'report-row--grand-total' : (isCareTotal ? 'report-row--care-total' : '');
+        return `<tr class="${rowClass}">` + columns.map(column => {
+          let value = row[column];
+          const isDate = /時間$/.test(column) && value;
+          const isMoney = /金額|費$|總額|應收|小計/.test(column) && value !== '' && value != null && Number.isFinite(Number(value));
+          if (isDate) {
+            const date = new Date(value);
+            if (!Number.isNaN(date.getTime())) value = date.toLocaleString('zh-TW', { hour12: false });
+          }
+          if (isMoney) value = money(value);
+          return `<td class="${isMoney ? 'money' : ''}">${escapeHtml(value)}</td>`;
+        }).join('') + '</tr>';
+      }).join('');
     }
 
     async function download(type) {
@@ -1432,7 +1332,7 @@
       el.downloadButton.disabled = true;
       el.downloadButton.textContent = '產生中…';
       try {
-        const response = await server('downloadExcel', state.token, type, state.appliedFilters || collectFilters());
+        const response = await server('downloadExcel', state.token, type, filters());
         if (!response || !response.ok) throw new Error(response && response.message || '下載失敗');
         const bytes = base64ToBytes(response.base64);
         const blob = new Blob([bytes], { type: response.mimeType });
