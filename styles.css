@@ -231,6 +231,7 @@
   tbody tr.report-row--grand-total { background: var(--green-soft); font-weight: 900; border-top: 2px solid var(--brand); }
   tbody tr.report-row--grand-total:hover { background: #d5e8e0; }
   td.money { text-align: right; font-variant-numeric: tabular-nums; }
+  .report-table--centered th, .report-table--centered td { text-align: center; }
 
   @media (max-width: 800px) {
     .site-header { min-height: 142px; padding: 18px; }

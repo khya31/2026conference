@@ -1295,7 +1295,9 @@
       el.title.textContent = response.title || '報表';
       el.description.textContent = response.description || '';
       const metrics = response.metrics || [];
-      el.metricGrid.classList.toggle('stats-grid--overview', response.view === 'OVERVIEW');
+      const isOverview = response.view === 'OVERVIEW';
+      el.metricGrid.classList.toggle('stats-grid--overview', isOverview);
+      el.table.classList.toggle('report-table--centered', isOverview);
       el.metricGrid.innerHTML = metrics.map(metric => {
         const details = (metric.details || []).map(detail =>
           `<div class="stat-card__detail"><span>${escapeHtml(detail.label)}</span>` +
