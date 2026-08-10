@@ -311,7 +311,7 @@
       card.querySelector('[data-field="church"]').innerHTML = '<option value="">請選擇</option>' +
         state.config.areas.map(area => `<option value="${escapeHtml(area.name)}">${escapeHtml(area.name)}</option>`).join('');
       const identities = state.config.rules.identities.slice();
-      if (!isPrimary) identities.push({ value: 'CHILD', label: '兒童（0～11歲）' });
+      if (!isPrimary) identities.push({ value: 'CHILD', label: '兒童' });
       card.querySelector('[data-field="identityCategory"]').innerHTML = '<option value="">請選擇</option>' +
         identities.map(item => `<option value="${item.value}">${escapeHtml(item.label)}</option>`).join('');
       if (isPrimary) {
@@ -343,7 +343,6 @@
 
     function updateAgeFields(card) {
       const child = isChildCard(card);
-      const primary = card.dataset.primary === 'true';
       const childAgeField = card.querySelector('.child-age-field');
       const ageInput = childAgeField.querySelector('select');
       childAgeField.hidden = !child;
