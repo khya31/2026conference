@@ -147,8 +147,9 @@
   .route-itinerary table { width: 100%; min-width: 480px; border-collapse: collapse; font-size: .92rem; line-height: 1.45; }
   .route-itinerary th, .route-itinerary td { padding: 9px 10px; border-bottom: 1px solid #e4ece9; text-align: left; vertical-align: top; }
   .route-itinerary th { background: #edf7f3; color: var(--brand-dark); white-space: nowrap; }
-  .route-itinerary td:first-child { width: 150px; white-space: nowrap; font-weight: 700; color: #44514d; }
-  .route-itinerary td:nth-child(2) { width: auto; }
+  .route-itinerary td:first-child { width: 74px; white-space: nowrap; font-weight: 700; color: #44514d; }
+  .route-itinerary td:nth-child(2) { width: 118px; white-space: nowrap; }
+  .route-itinerary td:nth-child(3) { width: auto; }
   .route-itinerary tr:last-child td { border-bottom: 0; }
   .route-count { background: var(--accent-soft); color: #70411d; font-weight: 700; }
   .route-count ul { margin: 9px 0 5px; padding-left: 22px; }

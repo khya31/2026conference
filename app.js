@@ -651,19 +651,25 @@
       if (!rows.length) return '';
       let lastDate = '';
       const body = rows.map(row => {
-        const rawTime = String(row.time || '');
+        const rawTime = String(row.time || '').trim();
         const match = rawTime.match(/^(\d{1,2}\/\d{1,2})\s*(.*)$/);
+        let displayDate = '';
         let displayTime = rawTime;
+
         if (match) {
           const date = match[1];
-          const clock = match[2];
-          displayTime = date === lastDate ? clock : (clock ? `${date} ${clock}` : date);
-          lastDate = date;
+          displayTime = match[2] || '';
+          if (date !== lastDate) {
+            displayDate = date;
+            lastDate = date;
+          }
         }
-        return `<tr><td>${escapeHtml(displayTime)}</td><td>${escapeHtml(row.activity || '')}</td><td>${escapeHtml(row.note || '')}</td></tr>`;
+
+        return `<tr><td>${escapeHtml(displayDate)}</td><td>${escapeHtml(displayTime)}</td><td>${escapeHtml(row.activity || '')}</td><td>${escapeHtml(row.note || '')}</td></tr>`;
       }).join('');
+
       return `<div class="route-itinerary"><strong>詳細行程</strong><div class="route-itinerary-scroll">` +
-        `<table aria-label="詳細行程"><thead><tr><th>時間</th><th>行程</th><th>說明</th></tr></thead><tbody>` +
+        `<table aria-label="詳細行程"><thead><tr><th>日期</th><th>時間</th><th>行程</th><th>說明</th></tr></thead><tbody>` +
         body + '</tbody></table></div></div>';
     }
 
