@@ -1017,6 +1017,17 @@
       renderAll();
       if (!el.form.reportValidity()) return;
       const members = participantPayload();
+      const type = registrationType();
+      const age12PlusCount = members.filter(member => member.identityCategory !== 'CHILD').length;
+      const childCount = members.length - age12PlusCount;
+      if (type === 'TEAM' && age12PlusCount < 2) {
+        showError('相約／組隊報名至少需要2位12歲以上的報名者；目前只有1位，請改選「個人報名」。');
+        return;
+      }
+      if (type === 'FAMILY' && age12PlusCount < 2 && !(age12PlusCount === 1 && childCount >= 1)) {
+        showError('家庭報名需要至少2位12歲以上的報名者；若只有1位12歲以上報名者，至少需搭配1位0～11歲兒童。');
+        return;
+      }
       const route = currentRoute();
       const options = collectRouteOptions();
       if (!meetingOnly() && ['MOTORCYCLE', 'BICYCLE', 'COACH'].includes(transportMode()) && travelMode() === 'NONE') {
@@ -1278,9 +1289,18 @@
       el.title.textContent = response.title || '報表';
       el.description.textContent = response.description || '';
       const metrics = response.metrics || [];
-      el.metricGrid.innerHTML = metrics.map(metric =>
-        `<article class="stat-card ${metric.money ? 'stat-card--money' : ''}"><span>${escapeHtml(metric.label)}</span><strong>${metric.money ? money(metric.value) : escapeHtml(metric.value)}</strong></article>`
-      ).join('');
+      el.metricGrid.classList.toggle('stats-grid--overview', response.view === 'OVERVIEW');
+      el.metricGrid.innerHTML = metrics.map(metric => {
+        const details = (metric.details || []).map(detail =>
+          `<div class="stat-card__detail"><span>${escapeHtml(detail.label)}</span>` +
+          `<strong>${escapeHtml(detail.value)}</strong>` +
+          (detail.note ? `<small>${escapeHtml(detail.note)}</small>` : '') + '</div>'
+        ).join('');
+        return `<article class="stat-card ${metric.money ? 'stat-card--money' : ''}">` +
+          `<span class="stat-card__label">${escapeHtml(metric.label)}</span>` +
+          `<strong class="stat-card__value">${metric.money ? money(metric.value) : escapeHtml(metric.value)}</strong>` +
+          (details ? `<div class="stat-card__details">${details}</div>` : '') + '</article>';
+      }).join('');
       el.metricGrid.hidden = metrics.length === 0;
       el.pills.innerHTML = (response.pills || []).map(text => `<span class="route-pill">${escapeHtml(text)}</span>`).join('');
       renderDynamicTable(response.columns || [], response.rows || []);
@@ -1289,17 +1309,22 @@
 
     function renderDynamicTable(columns, rows) {
       el.table.tHead.innerHTML = '<tr>' + columns.map(column => `<th>${escapeHtml(column)}</th>`).join('') + '</tr>';
-      el.table.tBodies[0].innerHTML = rows.map(row => '<tr>' + columns.map(column => {
-        let value = row[column];
-        const isDate = /時間$/.test(column) && value;
-        const isMoney = /金額|費$|總額|應收|小計/.test(column) && value !== '' && value != null && Number.isFinite(Number(value));
-        if (isDate) {
-          const date = new Date(value);
-          if (!Number.isNaN(date.getTime())) value = date.toLocaleString('zh-TW', { hour12: false });
-        }
-        if (isMoney) value = money(value);
-        return `<td class="${isMoney ? 'money' : ''}">${escapeHtml(value)}</td>`;
-      }).join('') + '</tr>').join('');
+      el.table.tBodies[0].innerHTML = rows.map(row => {
+        const isCareTotal = row['大區'] === '照顧區合計';
+        const isGrandTotal = row['召會'] === '總計' && row['大區'] === '總計';
+        const rowClass = isGrandTotal ? 'report-row--grand-total' : (isCareTotal ? 'report-row--care-total' : '');
+        return `<tr class="${rowClass}">` + columns.map(column => {
+          let value = row[column];
+          const isDate = /時間$/.test(column) && value;
+          const isMoney = /金額|費$|總額|應收|小計/.test(column) && value !== '' && value != null && Number.isFinite(Number(value));
+          if (isDate) {
+            const date = new Date(value);
+            if (!Number.isNaN(date.getTime())) value = date.toLocaleString('zh-TW', { hour12: false });
+          }
+          if (isMoney) value = money(value);
+          return `<td class="${isMoney ? 'money' : ''}">${escapeHtml(value)}</td>`;
+        }).join('') + '</tr>';
+      }).join('');
     }
 
     async function download(type) {
