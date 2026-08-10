@@ -1,13 +1,13 @@
 # 2026 青職特會報名系統前端
 
-版本：2026.08.10-r53.1
+版本：2026.08.10-r53.2
 
 ## 正式 API
 
 前端 API 設定唯一來源為 `config.js`。
 
 - GAS Web App：`https://script.google.com/macros/s/AKfycbxGp7gwzzWHHBCwPN801EgjBTOwYYGRWCv91uS54zY9zn8O5RBouGuj38JsQNFimYHxjw/exec`
-- 預期 GAS API 版本：`2026.08.10-r53`
+- 預期 GAS API 版本：`2026.08.10-r53.2`
 
 ## 部署
 
