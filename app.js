@@ -181,7 +181,7 @@
         el.insurancePrice.textContent = `每人 ${pricing.travelInsuranceFee} 元`;
         el.hotelPricingDescription.textContent = response.rules.roomTypes.map(room =>
           `${room.label}${Number(room.surcharge || 0) ? `每位成人加 ${room.surcharge} 元` : '不加價'}`
-        ).join('、') + '。幼兒及兒童不加收房型費。';
+        ).join('、') + '。幼兒及兒童不加收房型費。\n住宿福華每人費用包含：10/3晚餐（市價800元）、10/4早餐（市價500元）、場地雜費（約300元）、住宿費（約900元）';
         addMember(true);
         renderAll();
       } catch (error) {
