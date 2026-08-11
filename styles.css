@@ -111,6 +111,7 @@
 
   .hotel-banner { display: flex; gap: 14px; align-items: center; border-radius: 14px; padding: 16px; background: #fbf3e9; margin-bottom: 20px; }
   .hotel-banner p { margin: 3px 0 0; color: var(--muted); font-size: .88rem; }
+    #hotelPricingDescription {  white-space: pre-line;}
   .primary-hotel-info { margin: 0 20px 20px; }
   .hotel-icon { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: var(--accent); color: white; font-weight: 900; }
   .meeting-only-choice { display: flex; gap: 12px; align-items: flex-start; margin-top: 18px; padding: 16px; border: 2px solid #e3b589; border-radius: 14px; background: #fff8ec; cursor: pointer; }
