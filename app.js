@@ -882,6 +882,8 @@
         if (member.childAgeBand === 'CHILD_6_11') return 8;
         return -1;
       }
+      if (member.identityCategory === 'TEEN') return 15;
+      if (member.identityCategory === 'COLLEGE') return 20;
       if (member.identityCategory === 'YOUNG_35') return 30;
       if (member.identityCategory === 'YOUNG_ADULT') return 40;
       if (member.identityCategory === 'MIDDLE') return 55;
