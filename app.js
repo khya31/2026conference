@@ -564,14 +564,14 @@
         const guardianFields = child ? `<div class="guardian-fields form-grid" data-guardian-fields ${insured ? '' : 'hidden'}>
           <label class="field"><span>監護人姓名</span><input data-insurance-field="guardianName" maxlength="40" value="${escapeHtml(data.guardianName)}" ${insured ? 'required' : ''}></label>
           <label class="field"><span>監護人出生年月日（民國年）</span><input data-insurance-field="guardianBirthRoc" inputmode="numeric" maxlength="10" pattern="[0-9]{1,3}[/-][0-9]{1,2}[/-][0-9]{1,2}" placeholder="例：60/01/02" value="${escapeHtml(data.guardianBirthRoc)}" ${insured ? 'required' : ''}></label>
-          <label class="field"><span>監護人身分證字號／居留證號</span><input data-insurance-field="guardianNationalId" maxlength="10" pattern="[A-Za-z][1289][0-9]{8}" autocapitalize="characters" placeholder="例：A123456789" value="${escapeHtml(data.guardianNationalId)}" ${insured ? 'required' : ''}></label>
+          <label class="field"><span>監護人身分證字號／居留證號(新式)</span><input data-insurance-field="guardianNationalId" maxlength="10" pattern="[A-Za-z][1289][0-9]{8}" autocapitalize="characters" placeholder="例：A123456789" value="${escapeHtml(data.guardianNationalId)}" ${insured ? 'required' : ''}></label>
         </div>` : '';
         return `<article class="insurance-member" data-member-id="${memberId}" data-child="${child}">
           <h4>${escapeHtml(role)}｜${escapeHtml(memberName)} <span class="insurance-name-note">※ 姓名需與身分證相同</span></h4>
           <label class="field"><span>是否加保旅遊平安險</span>${insuranceSelect}</label>
           <div class="insurance-details form-grid" data-insurance-details ${insured ? '' : 'hidden'}>
             <label class="field"><span>被保險人出生年月日（民國年）</span><input data-insurance-field="insuredBirthRoc" inputmode="numeric" maxlength="10" pattern="[0-9]{1,3}[/-][0-9]{1,2}[/-][0-9]{1,2}" placeholder="例：85/01/02" value="${escapeHtml(data.insuredBirthRoc)}" ${insured ? 'required' : ''}></label>
-            <label class="field"><span>被保險人身分證字號／居留證號</span><input data-insurance-field="insuredNationalId" maxlength="10" pattern="[A-Za-z][1289][0-9]{8}" autocapitalize="characters" placeholder="例：A123456789" value="${escapeHtml(data.insuredNationalId)}" ${insured ? 'required' : ''}></label>
+            <label class="field"><span>被保險人身分證字號／居留證號(新式)</span><input data-insurance-field="insuredNationalId" maxlength="10" pattern="[A-Za-z][1289][0-9]{8}" autocapitalize="characters" placeholder="例：A123456789" value="${escapeHtml(data.insuredNationalId)}" ${insured ? 'required' : ''}></label>
             ${guardianFields}
           </div>
         </article>`;
