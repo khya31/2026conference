@@ -482,7 +482,7 @@
       const transportRule = state.config.rules.transportModes.find(item => item.value === transport);
       if (!transportRule || !transportRule.routes.includes(routeId)) return false;
       if (mode === 'SELF_PAY' && transport === 'COACH') return false;
-      return !(mode === 'SELF_PAY' && ['R01', 'R02'].includes(routeId));
+      return !(mode === 'SELF_PAY' && ['R01', 'R02', 'R07'].includes(routeId));
     }
 
     function insuranceMode() {
