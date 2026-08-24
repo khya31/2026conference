@@ -1246,7 +1246,7 @@
       el.loginMessage.hidden = true;
       try {
         const response = await server('loginReport', el.password.value);
-        if (!response || !response.ok) throw new Error(response && response.message || '登入失敗');
+        if (!response || !response.ok) throw reportApiError(response, '登入失敗');
         state.token = response.token;
         el.password.value = '';
         el.loginPanel.hidden = true;
@@ -1259,6 +1259,25 @@
         el.loginButton.disabled = false;
         el.loginButton.textContent = '登入';
       }
+    }
+
+    function reportApiError(response, fallbackMessage) {
+      const error = new Error(response && response.message || fallbackMessage);
+      error.code = response && response.code ? String(response.code) : '';
+      return error;
+    }
+
+    function handleReportAuthError(error) {
+      if (!error || (error.code !== 'AUTH_EXPIRED' && error.code !== 'AUTH_INVALID')) return false;
+      state.token = '';
+      state.reports = {};
+      state.appliedFilters = {};
+      state.appliedFiltersByView = {};
+      el.app.hidden = true;
+      el.loginPanel.hidden = false;
+      el.loginMessage.textContent = error.message;
+      el.loginMessage.hidden = false;
+      return true;
     }
 
     function currentFilterValues() {
@@ -1396,7 +1415,7 @@
       el.applyFilters.disabled = true;
       try {
         const response = await server('getReportBundle', state.token, requestedFilters);
-        if (!response || !response.ok) throw new Error(response && response.message || '讀取失敗');
+        if (!response || !response.ok) throw reportApiError(response, '讀取失敗');
         state.filterOptions = response.filterOptions || state.filterOptions || {};
         state.reports = response.reports || {};
         state.appliedFilters = requestedFilters;
@@ -1409,11 +1428,7 @@
         hideReportMessage();
       } catch (error) {
         showReportMessage(error.message, true);
-        if (/登入|逾時/.test(error.message)) {
-          state.token = '';
-          el.app.hidden = true;
-          el.loginPanel.hidden = false;
-        }
+        handleReportAuthError(error);
       } finally {
         el.applyFilters.disabled = false;
         setLoading(false);
@@ -1491,7 +1506,7 @@
       el.downloadButton.textContent = '產生中…';
       try {
         const response = await server('downloadExcel', state.token, type, appliedFiltersForCurrentView());
-        if (!response || !response.ok) throw new Error(response && response.message || '下載失敗');
+        if (!response || !response.ok) throw reportApiError(response, '下載失敗');
         const bytes = base64ToBytes(response.base64);
         const blob = new Blob([bytes], { type: response.mimeType });
         const url = URL.createObjectURL(blob);
@@ -1505,6 +1520,7 @@
         showReportMessage('Excel 已產生並開始下載。', false);
       } catch (error) {
         showReportMessage(error.message, true);
+        handleReportAuthError(error);
       } finally {
         el.downloadButton.disabled = false;
         el.downloadButton.textContent = '下載 Excel ▾';
