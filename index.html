@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="高屏澎眾召會 2026年青職特會報名">
   <title>墾丁相調報名</title>
-  <link rel="stylesheet" href="styles.css?v=20260810-r54">
+  <link rel="stylesheet" href="styles.css?v=20260917-settings1">
 </head>
 <body data-page="registration">
   <header class="site-header">
@@ -38,7 +38,7 @@
         </label>
         <div id="accommodationSection" class="accommodation-section">
           <div class="form-grid">
-            <label class="field"><span>住宿方式</span><select id="groupAccommodation" required><option value="">請選擇</option><option value="HOWARD">福華度假飯店</option><option value="SELF">住宿自理</option></select></label>
+            <label class="field"><span>住宿方式</span><select id="groupAccommodation" required><option value="">請選擇</option><option value="HOWARD">福華度假飯店</option><option value="SELF">住宿自理</option></select><small id="hotelAvailabilityNote" class="availability-note" hidden>[已關閉登記]</small></label>
             <label id="groupRoomField" class="field room-type-field" hidden><span class="room-type-label">整組房型 <small class="field-inline-note">※僅算12歲以上人數；6歲以上兒童皆有床位，0～5歲幼兒共用床位。</small></span><select id="groupRoomType"><option value="">請選擇</option></select></label>
           </div>
           <div id="groupHotelInfo" class="hotel-banner" hidden>
@@ -91,6 +91,7 @@
 
       <section id="travelCard" class="card">
         <div class="section-heading"><div><span class="step">04</span><h2>旅遊方式</h2></div></div>
+        <div id="travelAvailabilityNotice" class="availability-banner" hidden>旅遊路線報名[已關閉登記]</div>
         <div class="choice-stack">
           <label class="choice"><input type="radio" name="travelMode" value="NONE" checked><span><strong>不參加旅遊行程</strong><small>不顯示路線，也不計算旅遊費</small></span></label>
           <label class="choice"><input type="radio" name="travelMode" value="STANDARD"><span><strong>參加旅遊行程</strong><small>旅遊費納入報名時應繳總額</small></span></label>
@@ -172,7 +173,7 @@
       </div>
     </article>
   </template>
-  <script src="config.js?v=20260810-r54"></script>
-  <script src="app.js?v=20260810-r54"></script>
+  <script src="config.js?v=20260917-settings1"></script>
+  <script src="app.js?v=20260917-settings1"></script>
 </body>
 </html>

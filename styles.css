@@ -185,6 +185,9 @@
   .detail-row.total { font-weight: 900; color: var(--brand-dark); border: 0; padding-top: 12px; }
   .mobile-bottom-spacer { height: 150px; }
 
+  .availability-note { display: block; margin-top: 7px; color: var(--danger); font-weight: 900; line-height: 1.45; }
+  .availability-banner { margin: -4px 0 14px; padding: 11px 13px; border: 1px solid #e4b8b3; border-radius: 11px; background: #fae5e2; color: #7b2d28; font-weight: 900; }
+
   .message { border-radius: 12px; padding: 13px 15px; margin: 12px 0; background: var(--green-soft); color: var(--brand-dark); }
   .message--error { background: #fae5e2; color: #7b2d28; }
   .result-dialog { border: 0; border-radius: 20px; padding: 32px; text-align: center; color: var(--ink); box-shadow: 0 20px 70px rgba(20,35,30,.3); width: min(560px, calc(100% - 32px)); max-height: calc(100vh - 32px); overflow: auto; }
@@ -204,6 +207,7 @@
     text-align: left;
   }
   .report-header > div, .report-header h1 { text-align: left; }
+  .header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .login-card { width: min(460px, 100%); margin: 0 auto; }
   .report-control-card { padding-bottom: 24px; }
   .report-view-grid { display: grid; grid-template-columns: minmax(280px, 560px); }
@@ -272,6 +276,7 @@
     .fee-dock__details { bottom: 110px; width: 100%; max-height: 42vh; }
     .mobile-bottom-spacer { height: 190px; }
     .report-link { padding: 8px 12px; font-size: .84rem; }
+    .header-actions { width: 100%; }
     .stats-grid, .stats-grid--overview { grid-template-columns: repeat(2, 1fr); }
     .filter-actions { align-items: stretch; flex-direction: column; }
     .filter-actions .button { width: 100%; }

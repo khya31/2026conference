@@ -102,6 +102,7 @@
       roomType: document.getElementById('groupRoomType'),
       hotelInfo: document.getElementById('groupHotelInfo'),
       hotelPricingDescription: document.getElementById('hotelPricingDescription'),
+      hotelAvailabilityNote: document.getElementById('hotelAvailabilityNote'),
       meetingOnlyDescription: document.getElementById('meetingOnlyDescription'),
       insurancePrice: document.getElementById('insurancePrice'),
       roomConfirmationPanel: document.getElementById('roomConfirmationPanel'),
@@ -113,6 +114,7 @@
       roomCapacityConfirmationText: document.getElementById('roomCapacityConfirmationText'),
       transportCard: document.getElementById('transportCard'),
       travelCard: document.getElementById('travelCard'),
+      travelAvailabilityNotice: document.getElementById('travelAvailabilityNotice'),
       insuranceSurvey: document.getElementById('insuranceSurvey'),
       insuranceTitle: document.getElementById('insuranceTitle'),
       insuranceDescription: document.getElementById('insuranceDescription'),
@@ -389,6 +391,72 @@
       district.value = previous;
     }
 
+    function registrationAvailability() {
+      const availability = state.config && state.config.registrationAvailability;
+      const routes = availability && availability.routes || {};
+      return {
+        hotelEnabled: !availability || availability.hotelEnabled !== false,
+        travelEnabled: !availability || availability.travelEnabled !== false,
+        routes
+      };
+    }
+
+    function isRouteRegistrationOpen(routeId) {
+      const availability = registrationAvailability();
+      return availability.travelEnabled && availability.routes[routeId] !== false;
+    }
+
+    function openRoutesForTransport(transport) {
+      const rule = state.config.rules.transportModes.find(item => item.value === transport);
+      if (!rule) return [];
+      return rule.routes.filter(isRouteRegistrationOpen);
+    }
+
+    function applyRegistrationAvailability() {
+      const availability = registrationAvailability();
+      const howardOption = el.accommodation.querySelector('option[value="HOWARD"]');
+      if (howardOption) {
+        howardOption.disabled = !availability.hotelEnabled;
+        howardOption.textContent = availability.hotelEnabled ? '福華度假飯店' : '福華度假飯店[已關閉登記]';
+      }
+      if (el.hotelAvailabilityNote) el.hotelAvailabilityNote.hidden = availability.hotelEnabled;
+      if (!availability.hotelEnabled && el.accommodation.value === 'HOWARD') {
+        el.accommodation.value = '';
+        el.roomType.value = '';
+      }
+
+      const only = meetingOnly();
+      el.form.querySelectorAll('[name="transportMode"]').forEach(input => {
+        const requiresTravel = ['MOTORCYCLE', 'BICYCLE', 'COACH'].includes(input.value);
+        const unavailable = requiresTravel && openRoutesForTransport(input.value).length === 0;
+        input.disabled = only || unavailable;
+        input.closest('.choice').classList.toggle('choice--disabled', only || unavailable);
+        const small = input.closest('.choice').querySelector('small');
+        if (small) {
+          if (!small.dataset.baseText) small.dataset.baseText = small.textContent;
+          small.textContent = unavailable ? `${small.dataset.baseText}[目前無可報名路線]` : small.dataset.baseText;
+        }
+        if (unavailable && input.checked) input.checked = false;
+      });
+
+      const anyRouteOpen = state.config.rules.routes.some(route => isRouteRegistrationOpen(route.id));
+      const travelClosed = !availability.travelEnabled || !anyRouteOpen;
+      if (el.travelAvailabilityNotice) el.travelAvailabilityNotice.hidden = !travelClosed;
+      const noneInput = el.form.querySelector('[name="travelMode"][value="NONE"]');
+      const standardInput = el.form.querySelector('[name="travelMode"][value="STANDARD"]');
+      const selfPayInput = el.form.querySelector('[name="travelMode"][value="SELF_PAY"]');
+      if (only || travelClosed) {
+        standardInput.disabled = true;
+        selfPayInput.disabled = true;
+        standardInput.closest('.choice').classList.add('choice--disabled');
+        selfPayInput.closest('.choice').classList.add('choice--disabled');
+        if (!only) {
+          noneInput.disabled = false;
+          noneInput.checked = true;
+        }
+      }
+    }
+
     function updateMeetingOnly() {
       const only = meetingOnly();
       el.accommodationSection.hidden = only;
@@ -466,14 +534,32 @@
     function enforceTravelMode() {
       if (meetingOnly()) return;
       const transport = transportMode();
+      const availability = registrationAvailability();
+      const anyRouteOpen = state.config.rules.routes.some(route => isRouteRegistrationOpen(route.id));
+      const transportHasOpenRoute = !transport || openRoutesForTransport(transport).length > 0;
+      const travelClosed = !availability.travelEnabled || !anyRouteOpen || !transportHasOpenRoute;
       const mustTravel = ['MOTORCYCLE', 'BICYCLE', 'COACH'].includes(transport);
       const selfPayForbidden = ['MOTORCYCLE', 'BICYCLE', 'COACH'].includes(transport);
       const noneInput = el.form.querySelector('[name="travelMode"][value="NONE"]');
       const standardInput = el.form.querySelector('[name="travelMode"][value="STANDARD"]');
       const selfPayInput = el.form.querySelector('[name="travelMode"][value="SELF_PAY"]');
+
+      if (travelClosed) {
+        noneInput.disabled = false;
+        standardInput.disabled = true;
+        selfPayInput.disabled = true;
+        noneInput.checked = true;
+        noneInput.closest('.choice').classList.remove('choice--disabled');
+        standardInput.closest('.choice').classList.add('choice--disabled');
+        selfPayInput.closest('.choice').classList.add('choice--disabled');
+        return;
+      }
+
       noneInput.disabled = mustTravel;
+      standardInput.disabled = false;
       selfPayInput.disabled = selfPayForbidden;
       noneInput.closest('.choice').classList.toggle('choice--disabled', mustTravel);
+      standardInput.closest('.choice').classList.remove('choice--disabled');
       selfPayInput.closest('.choice').classList.toggle('choice--disabled', selfPayForbidden);
       if ((mustTravel && noneInput.checked) || (selfPayForbidden && selfPayInput.checked)) standardInput.checked = true;
     }
@@ -483,6 +569,10 @@
       if (!transportRule || !transportRule.routes.includes(routeId)) return false;
       if (mode === 'SELF_PAY' && transport === 'COACH') return false;
       return !(mode === 'SELF_PAY' && ['R01', 'R02', 'R07'].includes(routeId));
+    }
+
+    function routeSelectable(routeId, mode, transport) {
+      return isRouteRegistrationOpen(routeId) && routeAllowed(routeId, mode, transport);
     }
 
     function insuranceMode() {
@@ -581,6 +671,7 @@
     function renderAll() {
       if (!state.config) return;
       updateMeetingOnly();
+      applyRegistrationAvailability();
       enforceTravelMode();
       renderRoute();
       renderInsuranceSurvey();
@@ -600,12 +691,16 @@
       const transport = transportMode();
       [...el.routeId.options].forEach(option => {
         if (!option.value) return;
+        const open = isRouteRegistrationOpen(option.value);
         const allowed = routeAllowed(option.value, mode, transport);
-        option.disabled = !allowed;
-        option.textContent = option.dataset.baseName + (allowed ? '' : '（您無法選擇此路線）');
-        option.classList.toggle('route-unavailable', !allowed);
+        const selectable = open && allowed;
+        option.disabled = !selectable;
+        option.textContent = option.dataset.baseName + (!open
+          ? '[此路線報名已關閉]'
+          : (allowed ? '' : '（您無法選擇此路線）'));
+        option.classList.toggle('route-unavailable', !selectable);
       });
-      if (el.routeId.value && !routeAllowed(el.routeId.value, mode, transport)) el.routeId.value = '';
+      if (el.routeId.value && !routeSelectable(el.routeId.value, mode, transport)) el.routeId.value = '';
       el.routeSection.hidden = mode === 'NONE';
       el.routeId.required = mode !== 'NONE';
       if (mode === 'NONE') {
@@ -1072,8 +1167,21 @@
       }
       const route = currentRoute();
       const options = collectRouteOptions();
+      const availability = registrationAvailability();
+      if (!meetingOnly() && !availability.hotelEnabled && el.accommodation.value === 'HOWARD') {
+        showError('福華住宿登記已關閉，請改選住宿自理。');
+        return;
+      }
+      if (!meetingOnly() && travelMode() !== 'NONE' && !availability.travelEnabled) {
+        showError('旅遊路線報名已關閉，請改選不參加旅遊行程。');
+        return;
+      }
       if (!meetingOnly() && ['MOTORCYCLE', 'BICYCLE', 'COACH'].includes(transportMode()) && travelMode() === 'NONE') {
         showError('選擇機車隊、單車隊或搭乘遊覽車時，必須參加旅遊行程。');
+        return;
+      }
+      if (route && !isRouteRegistrationOpen(route.id)) {
+        showError('此路線報名已關閉，請重新選擇旅遊路線。');
         return;
       }
       if (route && !routeAllowed(route.id, travelMode(), transportMode())) {
@@ -1191,6 +1299,11 @@
       filtersDirty: false,
       loading: false
     };
+    const settingsLink = document.getElementById('registrationSettingsLink');
+    if (settingsLink && window.APP_CONFIG && window.APP_CONFIG.apiUrl) {
+      settingsLink.href = window.APP_CONFIG.apiUrl + '?page=settings';
+    }
+
     const el = {
       loginPanel: document.getElementById('loginPanel'),
       loginForm: document.getElementById('loginForm'),
